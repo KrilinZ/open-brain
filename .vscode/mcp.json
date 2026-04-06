@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "antigravity-ki": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/scripts/mcp-ki-server.mjs"],
+      "description": "Antigravity Brain — Almacén de Knowledge Items (~/.gemini/antigravity/knowledge/)"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "description": "Control de browser (Chromium) — navegar, hacer click, screenshots, rellenar formularios"
+    }
+  }
+}

@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Primary Meta Tags -->
+  <title>Open Brain OS — The Neural OS</title>
+  <meta name="title" content="Open Brain OS — The Neural OS">
+  <meta name="description" content="Unifica Cursor, Windsurf, Aider y Claude Code en una bóveda local off-grid hiper-segura. 100% OFF-GRID.">
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Open Graph / Facebook / WhatsApp -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://openbrain.duckdns.org/">
+  <meta property="og:title" content="Open Brain OS — The Neural OS">
+  <meta property="og:description" content="El Sistema Operativo Neuronal para Desarrolladores. Inferencia Llama 3.2 100% local, monitorización SSH y Bóveda Criptográfica de APIs.">
+  <meta property="og:image" content="https://openbrain.duckdns.org/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://openbrain.duckdns.org/">
+  <meta property="twitter:title" content="Open Brain OS — The Neural OS">
+  <meta property="twitter:description" content="El Sistema Operativo Neuronal para Desarrolladores. Inferencia Llama 3.2 100% local, monitorización SSH y Bóveda Criptográfica de APIs.">
+  <meta property="twitter:image" content="https://openbrain.duckdns.org/og-image.png">
+
+  <!-- Schema.org for Google SERPs Rich Snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Open Brain OS",
+    "operatingSystem": "macOS",
+    "applicationCategory": "DeveloperApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "128"
+    }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #090314;
+      --card: rgba(10,10,30,0.65);
+      --accent: #00e5ff;
+      --pink: #e040fb;
+      --blue: #00bcd4;
+      --purple: #b388ff;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: rgba(0,229,255,0.1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Cyberpunk Scanlines */
+    body::after {
+      content: ''; position: fixed; inset: 0;
+      background: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,229,255,0.015) 2px, rgba(0,229,255,0.015) 4px);
+      pointer-events: none; z-index: 99;
+    }
+    
+    /* 3D Cyberpunk Grid */
+    #cyber-grid {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 50vh;
+      background-image: 
+        linear-gradient(rgba(224,64,251,0.2) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(0,229,255,0.2) 2px, transparent 2px);
+      background-size: 80px 80px;
+      background-position: center bottom;
+      transform-origin: bottom center;
+      transform: perspective(600px) rotateX(75deg) scale(2.5);
+      z-index: -3;
+      animation: grid-move 5s linear infinite;
+      box-shadow: inset 0 200px 100px -100px var(--bg);
+      clip-path: inset(0);
+    }
+    .grid-glow {
+      position: fixed; bottom: 0; left: 0; width: 100%; height: 30vh;
+      background: linear-gradient(to top, rgba(224,64,251,0.15) 0%, transparent 100%);
+      z-index: -2; pointer-events: none;
+    }
+    @keyframes grid-move {
+      from { background-position: center 0; }
+      to { background-position: center 80px; }
+    }
+    
+    #tsparticles {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 999px; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+    @keyframes pulse-glow { 0%,100% { opacity: 0.4; box-shadow: 0 0 10px var(--accent); } 50% { opacity: 1; box-shadow: 0 0 30px var(--accent), 0 0 60px var(--pink); } }
+    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+    @keyframes slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes auroral-breathe {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    @keyframes glitch {
+      0%,100% { text-shadow: 2px 0 var(--pink), -2px 0 var(--blue); }
+      20% { text-shadow: -3px 0 var(--pink), 3px 0 var(--blue); }
+      40% { text-shadow: 2px -1px var(--pink), -2px 1px var(--blue); }
+      60% { text-shadow: -1px 2px var(--pink), 1px -2px var(--blue); }
+    }
+    @keyframes border-flow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes typing {
+      from { width: 0; } to { width: 100%; }
+    }
+    @keyframes blink-caret {
+      0%,100% { border-color: var(--accent); } 50% { border-color: transparent; }
+    }
+
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .fade-in-d1 { transition-delay: 0.1s; }
+    .fade-in-d2 { transition-delay: 0.2s; }
+    .fade-in-d3 { transition-delay: 0.3s; }
+    .fade-in-d4 { transition-delay: 0.4s; }
+    .fade-in-d5 { transition-delay: 0.5s; }
+    .fade-in-d6 { transition-delay: 0.6s; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      background: rgba(5,5,16,0.6); border-bottom: 1px solid transparent;
+      padding: 1.2rem 2rem; display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    nav.scrolled {
+      padding: 0.8rem 2rem; background: rgba(5,5,16,0.85); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'Orbitron', monospace;
+      font-weight: 900; font-size: 1.1rem;
+      background: linear-gradient(90deg, var(--accent), var(--blue), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.1em;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; font-weight: 500; }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: #000; font-weight: 700; padding: 0.5rem 1.2rem;
+      border-radius: 8px; text-decoration: none; font-size: 0.85rem;
+      transition: all 0.3s; border: none; cursor: pointer;
+    }
+    .nav-cta:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,229,255,0.3), 0 0 40px rgba(224,64,251,0.15); }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 8rem 2rem 4rem; position: relative; overflow: visible;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: 0; left: -10vw; right: -10vw; bottom: 0; pointer-events: none; z-index: -1;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(0,229,255,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(224,64,251,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(0,188,212,0.08) 0%, transparent 70%);
+      animation: auroral-breathe 8s infinite alternate ease-in-out;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(0,255,200,0.08); border: 1px solid rgba(0,255,200,0.2);
+      padding: 0.4rem 1rem; border-radius: 999px;
+      font-size: 0.75rem; color: var(--accent); font-weight: 600;
+      margin-bottom: 2rem; letter-spacing: 0.05em;
+    }
+    .hero-badge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); animation: pulse-glow 1.5s ease infinite;
+    }
+    .hero h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900; line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 .gradient {
+      display: inline-block;
+      background: linear-gradient(90deg, var(--accent), var(--pink), var(--blue), var(--accent));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+      filter: drop-shadow(0 0 15px rgba(0,229,255,0.4)) drop-shadow(0 0 30px rgba(224,64,251,0.2));
+    }
+    .hero-sub {
+      font-size: 1.15rem; color: var(--muted);
+      max-width: 600px; margin-bottom: 3rem; line-height: 1.8;
+    }
+    .hero-sub strong { color: var(--accent); }
+    .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: #000; font-weight: 700; padding: 0.9rem 2rem;
+      border-radius: 12px; text-decoration: none; font-size: 1rem;
+      transition: all 0.3s; border: none; cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,229,255,0.2), 0 0 40px rgba(224,64,251,0.1);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(0,229,255,0.4), 0 0 60px rgba(224,64,251,0.2); }
+    .btn-secondary {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); padding: 0.9rem 2rem;
+      border-radius: 12px; text-decoration: none; font-size: 1rem;
+      transition: all 0.3s; cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Hero mockup */
+    .hero-mockup {
+      margin-top: 4rem; position: relative;
+      max-width: 900px; width: 100%;
+      animation: float 6s ease-in-out infinite;
+    }
+    .mockup-window {
+      background: var(--card);
+      border: 1px solid rgba(0,229,255,0.15);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 30px rgba(0,229,255,0.05), 0 0 60px rgba(224,64,251,0.03);
+    }
+    .mockup-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 16px; background: rgba(0,0,0,0.4);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-dot.red { background: #ff5f57; }
+    .mockup-dot.yellow { background: #ffbd2e; }
+    .mockup-dot.green { background: #28c840; }
+    .mockup-title { margin-left: 12px; font-size: 0.75rem; color: var(--muted); font-family: 'Orbitron', monospace; }
+    .mockup-body {
+      padding: 2rem; min-height: 320px;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;
+      align-content: start;
+    }
+    .mockup-kpi {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px; padding: 1rem; text-align: center;
+    }
+    .mockup-kpi .val { font-family: 'Orbitron'; font-size: 1.5rem; font-weight: 900; }
+    .mockup-kpi .lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+    .c-green { color: var(--accent); }
+    .c-amber { color: #fbbf24; }
+    .c-cyan { color: var(--blue); }
+    .c-rose { color: var(--pink); }
+    .c-purple { color: var(--purple); }
+    .mockup-stats {
+      grid-column: 1 / -1;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .stat-bar {
+      background: rgba(0,0,0,0.3); border-radius: 8px; padding: 0.8rem;
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+    .stat-bar .stat-label { font-size: 0.65rem; color: var(--muted); margin-bottom: 6px; }
+    .stat-fill { height: 4px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .stat-fill > div { height: 100%; border-radius: 4px; }
+
+    /* ─── SECTION BASE ─── */
+    section { padding: 6rem 2rem; max-width: 1200px; margin: 0 auto; }
+    .hero { max-width: none; }
+    .section-label {
+      font-family: 'Orbitron'; font-size: 0.7rem; font-weight: 700;
+      color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Orbitron'; font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900; margin-bottom: 1rem; line-height: 1.2;
+    }
+    .section-desc { color: var(--muted); max-width: 600px; margin-bottom: 3rem; font-size: 1.05rem; }
+
+    /* ─── FEATURES ─── */
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: var(--card);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 2rem;
+      transition: all 0.4s; position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 20px; height: 20px;
+      border-top: 2px solid var(--accent);
+      border-left: 2px solid var(--accent);
+      opacity: 0.2; transition: all 0.3s;
+    }
+    .feature-card::after {
+      content: ''; position: absolute; bottom: 0; right: 0;
+      width: 20px; height: 20px;
+      border-bottom: 2px solid var(--pink);
+      border-right: 2px solid var(--pink);
+      opacity: 0.2; transition: all 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(0,229,255,0.2);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 25px rgba(0,229,255,0.06), 0 0 50px rgba(224,64,251,0.03);
+    }
+    .feature-card:hover::before,
+    .feature-card:hover::after { opacity: 0.6; width: 30px; height: 30px; }
+    .feature-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 1.2rem;
+    }
+    .feature-icon svg {
+      width: 28px; height: 28px;
+    }
+    .feature-card h3 { font-weight: 700; margin-bottom: 0.6rem; font-size: 1.1rem; }
+    .feature-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+    /* ─── VALUE PROPS (NEW) ─── */
+    .vp-grid {
+      display: grid; grid-template-columns: 1fr; gap: 3rem;
+      margin-bottom: 5rem;
+    }
+    .vp-card {
+      display: flex; gap: 3rem; align-items: center;
+      background: linear-gradient(145deg, rgba(10,10,30,0.8), rgba(5,5,16,0.9));
+      border: 1px solid var(--border); border-radius: 24px; padding: 3rem;
+      position: relative; overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: crosshair;
+    }
+    .vp-card::after {
+      content: ''; position: absolute; pointer-events: none;
+      top: 0; left: 0; right: 0; bottom: 0; z-index: 10;
+      background: radial-gradient(800px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(224,64,251,0.06), transparent 40%);
+      opacity: 0; transition: opacity 0.3s; border-radius: inherit;
+    }
+    .vp-card:hover::after { opacity: 1; }
+    .vp-card:hover {
+      border-color: rgba(0,229,255,0.4);
+      transform: scale(1.02);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 0 40px rgba(0,229,255,0.08);
+    }
+    .vp-card::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: conic-gradient(transparent, transparent, transparent, var(--accent));
+      animation: rotate 4s linear infinite;
+      opacity: 0; transition: opacity 0.5s; z-index: 0;
+    }
+    .vp-card:hover::before { opacity: 0.2; }
+    .vp-card .vp-bg-layer {
+      content: ''; position: absolute; inset: 2px;
+      background: var(--bg); border-radius: 22px; z-index: 1;
+    }
+    .vp-content { position: relative; z-index: 2; flex: 1; }
+    .vp-visual {
+      position: relative; z-index: 2; flex: 0 0 35%;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 200px;
+    }
+    .vp-visual svg {
+      width: 140px; height: 140px;
+      filter: drop-shadow(0 0 20px var(--glow-color, rgba(0,229,255,0.5))) drop-shadow(0 0 60px var(--glow-color, rgba(0,229,255,0.3)));
+    }
+    .vp-visual .vp-icon-wrap {
+      position: relative;
+      animation: vp-float 4s ease-in-out infinite;
+    }
+    .vp-visual .vp-icon-wrap::after {
+      content: ''; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+      width: 80px; height: 6px; border-radius: 50%;
+      background: var(--glow-color, rgba(0,229,255,0.3));
+      filter: blur(8px);
+      animation: vp-shadow 4s ease-in-out infinite;
+    }
+    @keyframes vp-float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-12px) rotate(2deg); }
+      75% { transform: translateY(-12px) rotate(-2deg); }
+    }
+    @keyframes vp-shadow {
+      0%, 100% { opacity: 0.6; width: 80px; }
+      50% { opacity: 0.2; width: 50px; }
+    }
+    @keyframes neon-pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+    @keyframes svg-scan {
+      0% { stroke-dashoffset: 400; }
+      100% { stroke-dashoffset: 0; }
+    }
+    @keyframes rotate { 100% { transform: rotate(360deg); } }
+    .vp-card:nth-child(even) { flex-direction: row-reverse; }
+    .vp-card h3 {
+      font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900;
+      margin-bottom: 1rem;
+      background: linear-gradient(90deg, var(--text), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .vp-card p { color: var(--muted); font-size: 1.05rem; line-height: 1.7; margin-bottom: 1rem; }
+    .vp-list { list-style: none; margin-top: 1rem; }
+    .vp-list li {
+      position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; color: var(--muted);
+    }
+    .vp-list li::before {
+      content: '⚡'; position: absolute; left: 0; color: var(--accent); font-size: 0.8rem;
+    }
+    @media (max-width: 768px) {
+      .vp-card, .vp-card:nth-child(even) { flex-direction: column; text-align: center; gap: 1.5rem; padding: 2rem; }
+      .vp-list li { text-align: left; }
+    }
+
+    /* ─── STATS BAR ─── */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+      padding: 3rem; margin: 2rem 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+    .stat-item { text-align: center; }
+    .stat-number {
+      font-family: 'Orbitron'; font-weight: 900;
+      font-size: 2.5rem; line-height: 1;
+      background: linear-gradient(180deg, var(--accent), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label-main { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; }
+
+    /* ─── TECH STACK ─── */
+    .tech-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    .tech-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.2rem;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 12px;
+      font-size: 0.9rem; font-weight: 500;
+      transition: all 0.3s;
+    }
+    .tech-item:hover { border-color: var(--accent); transform: translateX(4px); }
+    .tech-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ─── HOW IT WORKS ─── */
+    .steps { display: flex; flex-direction: column; gap: 0; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; left: 24px; top: 0; bottom: 0; width: 2px;
+      background: linear-gradient(180deg, var(--accent), var(--blue), var(--pink), transparent);
+    }
+    .step {
+      display: flex; gap: 2rem; padding: 2rem 0; position: relative;
+    }
+    .step-num {
+      width: 50px; height: 50px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron'; font-weight: 900; font-size: 1.1rem;
+      border-radius: 50%; background: var(--bg);
+      border: 2px solid var(--accent);
+      color: var(--accent); z-index: 1;
+      box-shadow: 0 0 15px rgba(0,255,200,0.2);
+    }
+    .step-content h3 { font-weight: 700; margin-bottom: 0.4rem; }
+    .step-content p { color: var(--muted); font-size: 0.9rem; }
+
+    /* ─── FORM ─── */
+    #contacto { text-align: center; }
+    .form-container {
+      max-width: 500px; margin: 0 auto;
+      background: var(--card);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 3rem;
+      position: relative; overflow: hidden;
+    }
+    .form-container::before {
+      content: ''; position: absolute; top: 0; left: 2rem; right: 2rem; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--blue), var(--pink), transparent);
+    }
+    .form-group { margin-bottom: 1.2rem; text-align: left; }
+    .form-group label {
+      display: block; font-size: 0.8rem; font-weight: 600;
+      color: var(--muted); margin-bottom: 0.4rem; letter-spacing: 0.05em;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 0.8rem 1rem;
+      background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Inter', sans-serif; font-size: 0.9rem;
+      transition: border-color 0.3s; outline: none;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(0,255,200,0.1);
+    }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-group select option { background: #0d0d1f; }
+    .form-submit {
+      width: 100%; padding: 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      color: #000; font-weight: 800; font-size: 1rem;
+      border: none; border-radius: 12px; cursor: pointer;
+      transition: all 0.3s; font-family: 'Orbitron', monospace;
+      letter-spacing: 0.05em;
+    }
+    .form-submit:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(0,229,255,0.3), 0 0 50px rgba(224,64,251,0.15); }
+    .form-success {
+      display: none; padding: 1.5rem; text-align: center;
+      background: rgba(0,255,200,0.08); border: 1px solid rgba(0,255,200,0.2);
+      border-radius: 12px; color: var(--accent); font-weight: 600;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center; padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted); font-size: 0.8rem;
+    }
+    footer .footer-brand {
+      font-family: 'Orbitron'; font-weight: 900; font-size: 0.9rem;
+      background: linear-gradient(90deg, var(--accent), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem; display: block;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+      .mockup-body { grid-template-columns: repeat(3, 1fr); }
+      .mockup-stats { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .steps::before { left: 20px; }
+      .step { gap: 1.2rem; }
+      .step-num { width: 42px; height: 42px; font-size: 0.9rem; }
+    }
+    /* ─── CIRCUIT DIVIDERS ─── */
+    .circuit-divider {
+      width: 100%; height: 60px; position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .circuit-divider svg { width: 100%; max-width: 800px; height: 60px; }
+    .circuit-line {
+      stroke-dasharray: 800; stroke-dashoffset: 800;
+      animation: circuit-draw 3s ease forwards;
+    }
+    .circuit-divider.visible .circuit-line { animation: circuit-draw 3s ease forwards; }
+    @keyframes circuit-draw {
+      to { stroke-dashoffset: 0; }
+    }
+    .circuit-dot {
+      animation: circuit-blink 1.5s ease infinite;
+    }
+    @keyframes circuit-blink {
+      0%, 100% { opacity: 0.3; r: 3; }
+      50% { opacity: 1; r: 5; }
+    }
+
+    /* ─── HACKER TERMINAL ─── */
+    .hacker-terminal {
+      max-width: 700px; margin: 3rem auto 0; width: 100%;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.2);
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 0 30px rgba(0,229,255,0.1), inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .terminal-header {
+      background: rgba(0,229,255,0.06); padding: 8px 14px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid rgba(0,229,255,0.1);
+      font-family: 'Orbitron'; font-size: 0.6rem; color: var(--accent); letter-spacing: 0.1em;
+    }
+    .terminal-header .blink-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse-glow 1s ease infinite; }
+    .terminal-body {
+      padding: 16px 20px; font-family: 'Courier New', monospace; font-size: 0.8rem;
+      line-height: 1.8; color: var(--accent); min-height: 160px;
+    }
+    .terminal-body .line { opacity: 0; animation: term-line-in 0.3s ease forwards; }
+    .terminal-body .line.prompt::before { content: '❯ '; color: var(--pink); }
+    .terminal-body .line.output { color: var(--muted); }
+    .terminal-body .line.success { color: #4ade80; }
+    .terminal-body .cursor-blink::after { content: '█'; animation: blink-caret 0.8s step-end infinite; }
+    @keyframes term-line-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    
+    /* ─── ADVANCED ANIMATED SECTIONS ─── */
+    .feature-row { display: flex; align-items: center; justify-content: space-between; gap: 4rem; margin: 8rem auto; max-width: 1100px; padding: 0 2rem; }
+    .feature-row.reverse { flex-direction: row-reverse; }
+    .feature-text { flex: 1; }
+    .feature-text.fade-in { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+    .feature-text.visible { opacity: 1; transform: translateY(0); }
+    .feature-text h3 { font-size: 2.2rem; margin-bottom: 1.2rem; font-family: 'Orbitron', monospace; letter-spacing:-0.02em; }
+    .feature-text p { font-size: 1.15rem; color: #94a3b8; line-height: 1.7; margin-bottom: 1.5rem; }
+    .feature-text ul { list-style: none; padding: 0; }
+    .feature-text ul li { margin-bottom: 1rem; padding-left: 1.8rem; position: relative; color: #e2e8f0; font-size: 1.05rem; line-height:1.5; }
+    .feature-text ul li::before { content: '▹'; position: absolute; left: 0; font-weight:900; color: var(--color, var(--accent)); }
+    .feature-visual { flex: 1; position: relative; width: 100%; background: rgba(10,10,25,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; overflow: hidden; padding: 2rem; min-height: 350px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(255,255,255,0.02); opacity: 0; transform: scale(0.95); transition: all 1s cubic-bezier(0.2,0.8,0.2,1); }
+    .feature-visual.visible { opacity: 1; transform: scale(1); }
+    @media (max-width: 900px) { .feature-row, .feature-row.reverse { flex-direction: column; gap: 3rem; margin: 4rem auto; } .feature-text h3 { font-size: 2rem; } }
+    .anim-pulse { animation: pulseOpacity 2s infinite ease-in-out; }
+    @keyframes pulseOpacity { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; filter: drop-shadow(0 0 10px currentColor); } }
+    .anim-rotate { transform-origin: center; animation: spinSlow 15s linear infinite; }
+    @keyframes spinSlow { to { transform: rotate(360deg); } }
+    .anim-stroke { stroke-dasharray: 200; animation: dashMove 3s linear infinite; }
+    @keyframes dashMove { to { stroke-dashoffset: -400; } }
+    .typing-sim { overflow: hidden; white-space: nowrap; animation: typingSim 3s steps(40, end) infinite; }
+    @keyframes typingSim { 0% { width: 0; } 50% { width: 100%; } 100% { width: 100%; } }
+
+    /* ─── DATA STREAM ─── */
+
+    .data-stream {
+      position: fixed; top: 0; right: 20px; width: 1px; height: 100vh;
+      background: linear-gradient(180deg, transparent, var(--accent), transparent);
+      opacity: 0.1; z-index: -1;
+      animation: stream-flow 4s linear infinite;
+    }
+    .data-stream:nth-child(2) { right: auto; left: 20px; animation-delay: 2s; }
+    @keyframes stream-flow {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+
+    /* ─── TECH CONSTELLATION ─── */
+    .tech-constellation {
+      position: relative; width: 100%; max-width: 1000px;
+      margin: 0 auto; padding: 0;
+    }
+    .tech-constellation canvas {
+      display: block; width: 100%; height: 900px;
+      border-radius: 20px;
+    }
+    .constellation-label {
+      position: absolute; top: 20px; right: 20px;
+      font-family: 'Orbitron'; font-size: 0.55rem; letter-spacing: 0.2em;
+      color: var(--accent); opacity: 0.5;
+      border: 1px solid rgba(0,229,255,0.15); padding: 4px 10px; border-radius: 4px;
+    }
+
+    </style>
+</head>
+<body>
+  <!-- Partículas y Grid 3D -->
+  <div id="tsparticles"></div>
+  <div class="grid-glow"></div>
+  <div id="cyber-grid"></div>
+  <!-- Data streams laterales -->
+  <div class="data-stream"></div>
+  <div class="data-stream"></div>
+
+  <!-- ═══ NAV ═══ -->
+  <nav>
+    <div class="nav-logo"><img src="logo.png" alt="Open Brain" style="width:42px;height:42px;border-radius:8px;vertical-align:middle;filter:drop-shadow(0 0 8px rgba(0,255,200,0.5));"></div>
+    <ul class="nav-links">
+      <li><a href="#features" data-i18n="nav_features">Features</a></li>
+      <li><a href="#tech">Tech Stack</a></li>
+      <li><a href="#como" data-i18n="nav_how">How It Works</a></li>
+      <li><a href="#contacto" data-i18n="nav_get">Contact</a></li>
+    </ul>
+    <button id="langToggle" onclick="toggleLang()" style="background:none;border:1px solid rgba(0,229,255,0.3);color:var(--accent);font-family:'Orbitron',monospace;font-size:0.65rem;padding:4px 10px;border-radius:6px;cursor:pointer;letter-spacing:0.1em;margin-right:10px;transition:all 0.3s;">EN</button>
+    <a href="https://drive.google.com/drive/folders/1E-FhJ4fenzVgVqnyUXU5bZflt_-n7uHn?usp=sharing" target="_blank" class="nav-cta" data-i18n="nav_cta">Get it →</a>
+  </nav>
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero">
+    <img src="logo.png" alt="Open Brain" class="fade-in" style="width:220px;height:220px;border-radius:20px;margin-bottom:2rem;filter:drop-shadow(0 0 30px rgba(0,255,200,0.5)) drop-shadow(0 0 60px rgba(255,45,149,0.25));animation:float 4s ease-in-out infinite;">
+    <div class="hero-badge fade-in">● NEURAL OS — macOS arm64</div>
+    <h1 class="fade-in fade-in-d1">
+      <span class="gradient">Open Brain</span>
+    </h1>
+    <p class="hero-sub fade-in fade-in-d2" data-i18n="hero_sub">
+      The ultimate <strong>Control Tower</strong> for developers operating multiple projects with AI.<br>
+      Unify Cursor, Windsurf, Claude Code, and Aider sessions entirely offline.<br>
+      <strong style="color:var(--accent);font-size:0.95rem;">100% Secure · Local Inference · Zero Telemetry</strong>
+    </p>
+    <div class="hero-buttons fade-in fade-in-d3">
+      <a href="https://drive.google.com/drive/folders/1E-FhJ4fenzVgVqnyUXU5bZflt_-n7uHn?usp=sharing" target="_blank" class="btn-primary" data-i18n="hero_btn1">Download Now</a>
+      <a href="#features" class="btn-secondary" data-i18n="hero_btn2">See Core Modules ↓</a>
+    </div>
+
+    <!-- Hacker Terminal -->
+    <div class="hacker-terminal fade-in fade-in-d4">
+      <div class="terminal-header">
+        <div class="blink-dot"></div>
+        OPEN BRAIN OS — TERMINAL v1.2.3
+      </div>
+      <div class="terminal-body"></div>
+    </div>
+
+    <div class="hero-mockup fade-in fade-in-d4">
+      <div class="mockup-window">
+        <div class="mockup-bar">
+          <div class="mockup-dot red"></div>
+          <div class="mockup-dot yellow"></div>
+          <div class="mockup-dot green"></div>
+          <span class="mockup-title">OPEN BRAIN OS v1.2.3</span>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-kpi"><div class="val c-green">4</div><div class="lbl" data-i18n="mock_sessions">Nodes</div></div>
+          <div class="mockup-kpi"><div class="val c-amber">3.2B</div><div class="lbl">Params</div></div>
+          <div class="mockup-kpi"><div class="val c-cyan">512</div><div class="lbl" data-i18n="mock_artifacts">KIs Sync</div></div>
+          <div class="mockup-kpi"><div class="val c-rose">20ms</div><div class="lbl" data-i18n="mock_atrisk">Latency</div></div>
+          <div class="mockup-kpi"><div class="val c-purple">100%</div><div class="lbl">Offline</div></div>
+          <div class="mockup-stats">
+            <div class="stat-bar">
+              <div class="stat-label" data-i18n="mock_security">Session security</div>
+              <div class="stat-fill"><div style="width:92%;background:var(--accent);"></div></div>
+            </div>
+            <div class="stat-bar">
+              <div class="stat-label" data-i18n="mock_prompts">Externalized prompts</div>
+              <div class="stat-fill"><div style="width:78%;background:var(--blue);"></div></div>
+            </div>
+            <div class="stat-bar">
+              <div class="stat-label">Autopilot uptime</div>
+              <div class="stat-fill"><div style="width:100%;background:linear-gradient(90deg,var(--accent),var(--pink));"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CIRCUIT DIVIDER ═══ -->
+  <div class="circuit-divider fade-in">
+    <svg viewBox="0 0 800 60" fill="none">
+      <path class="circuit-line" d="M0 30 H250 L270 10 H350 L370 30 H430 L450 50 H530 L550 30 H800" stroke="var(--accent)" stroke-width="1.5"/>
+      <circle class="circuit-dot" cx="270" cy="10" r="3" fill="var(--accent)"/>
+      <circle class="circuit-dot" cx="370" cy="30" r="3" fill="var(--pink)" style="animation-delay:0.5s"/>
+      <circle class="circuit-dot" cx="450" cy="50" r="3" fill="var(--accent)" style="animation-delay:1s"/>
+      <circle class="circuit-dot" cx="550" cy="30" r="3" fill="var(--pink)" style="animation-delay:1.5s"/>
+    </svg>
+  </div>
+
+  <!-- ═══ STATS ═══ -->
+  <section>
+    <div class="stats-bar fade-in">
+      <div class="stat-item">
+        <div class="stat-number">9</div>
+        <div class="stat-label-main" data-i18n="stat_tabs">Specialized Tabs</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">15+</div>
+        <div class="stat-label-main">IPC Channels</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">30s</div>
+        <div class="stat-label-main">Auto-Sync Cycle</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">0€</div>
+        <div class="stat-label-main">Cloud Dependencies</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CIRCUIT DIVIDER ═══ -->
+  <div class="circuit-divider fade-in">
+    <svg viewBox="0 0 800 60" fill="none">
+      <path class="circuit-line" d="M0 30 H200 L220 50 H380 L400 30 H420 L440 10 H600 L620 30 H800" stroke="var(--pink)" stroke-width="1.5"/>
+      <circle class="circuit-dot" cx="220" cy="50" r="3" fill="var(--pink)"/>
+      <circle class="circuit-dot" cx="400" cy="30" r="3" fill="var(--accent)" style="animation-delay:0.3s"/>
+      <circle class="circuit-dot" cx="440" cy="10" r="3" fill="var(--pink)" style="animation-delay:0.7s"/>
+      <circle class="circuit-dot" cx="620" cy="30" r="3" fill="var(--accent)" style="animation-delay:1.2s"/>
+    </svg>
+  </div>
+
+  
+  <!-- ═══ ADVANCED SECTIONS ═══ -->
+  <section id="architecture">
+    <!-- Row 1: UNION -->
+    <div class="feature-row">
+      <div class="feature-text fade-in">
+        <h3 style="background: linear-gradient(90deg, #fff, #00e5ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="adv1_t">Deep Context UNION Sync</h3>
+        <p data-i18n="adv1_p1">Stop wasting API tokens re-explaining architectures to Windsurf, Cursor, and Aider individually.</p>
+        <p data-i18n="adv1_p2">Open Brain operates as a central daemon that seamlessly compiles your Git tracking data and Knowledge Items into global standard <code style="color:var(--accent)">.cursorrules</code>, <code style="color:var(--pink)">CLAUDE.md</code>, and <code>.windsurfrules</code> files in millisecond sync intervals.</p>
+        <ul>
+          <li style="--color:#00e5ff" data-i18n="adv1_l1">Native injection into CLI and GUI agents.</li>
+          <li style="--color:#00e5ff" data-i18n="adv1_l2">Automatic  cleanup across workspaces.</li>
+        </ul>
+      </div>
+      <div class="feature-visual fade-in" style="--glow-color: rgba(0,229,255,0.4); box-shadow: 0 0 40px rgba(0,229,255,0.1);">
+        <svg viewBox="0 0 200 200" width="100%" height="200px" style="overflow:visible;">
+          <!-- Brain Node Core -->
+          <circle cx="100" cy="100" r="20" fill="none" class="anim-pulse" stroke="#00e5ff" stroke-width="2"/>
+          <circle cx="100" cy="100" r="30" fill="none" stroke="rgba(0,229,255,0.2)" stroke-width="1" class="anim-rotate" stroke-dasharray="10 5"/>
+          <!-- Nodes -->
+          <g fill="#0f172a" stroke="#fff" stroke-width="1.5">
+            <rect x="10" y="30" width="50" height="30" rx="4"/>
+            <text x="35" y="48" fill="#fff" font-size="8" font-family="monospace" text-anchor="middle" stroke="none">CURSOR</text>
+            <rect x="140" y="30" width="50" height="30" rx="4"/>
+            <text x="165" y="48" fill="#fff" font-size="8" font-family="monospace" text-anchor="middle" stroke="none">CLAUDE</text>
+            <rect x="75" y="160" width="50" height="30" rx="4"/>
+            <text x="100" y="178" fill="#fff" font-size="8" font-family="monospace" text-anchor="middle" stroke="none">AIDER</text>
+          </g>
+          <!-- Wires with animated strokes -->
+          <path d="M35 60 Q 35 100 80 100" fill="none" stroke="#00e5ff" stroke-width="2" class="anim-stroke" opacity="0.8"/>
+          <path d="M165 60 Q 165 100 120 100" fill="none" stroke="#e040fb" stroke-width="2" class="anim-stroke" opacity="0.8" style="animation-duration: 2.5s"/>
+          <path d="M100 160 L 100 120" fill="none" stroke="#fbbf24" stroke-width="2" class="anim-stroke" opacity="0.8" style="animation-duration: 2s"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Row 2: Llama 3.2 Local -->
+    <div class="feature-row reverse">
+      <div class="feature-text fade-in">
+        <h3 style="background: linear-gradient(90deg, #fff, #e040fb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="adv2_t">100% OFF-GRID Inference</h3>
+        <p data-i18n="adv2_p1">Invoke Ollama's Llama 3.2 1B natively from the control terminal. The Neural Engine analyzes code diffs, logs, and processes without transmitting a single byte outside your firewall.</p>
+        <p data-i18n="adv2_p2">Paranoia-grade isolation. You can parse proprietary infrastructure, monitor raw SSH ports, and evaluate secret-laden env files knowing you are completely decoupled from external APIs.</p>
+      </div>
+      <div class="feature-visual fade-in" style="box-shadow: 0 0 40px rgba(224,64,251,0.1); background:#050510; align-items:flex-start; justify-content:flex-start;">
+        <div style="width:100%; display:flex; flex-direction:column; gap:8px; font-family:monospace; font-size:0.9rem; color:#e040fb;">
+           <div style="opacity:0.3">[system] generic-arm64-darwin...</div>
+           <div class="anim-pulse" style="color:#00e5ff; font-weight:bold;">> boot llama-3.2-1b-instruct --ctx 8192</div>
+           <div style="color:#4ade80;">[ok] Weights loaded into VRAM (0.8GB)</div>
+           <div style="opacity:0.5">[log] Listening strictly on 127.0.0.1:11434</div>
+           <div style="margin-top:1rem; color:#fff;">> input: Analyze local docker-compose.yml</div>
+           <div style="color:#fbbf24; white-space:nowrap; overflow:hidden;" class="typing-sim">[inference] "Found 3 isolated networks..."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Git Radar -->
+    <div class="feature-row">
+      <div class="feature-text fade-in">
+        <h3 style="background: linear-gradient(90deg, #fff, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="adv3_t">AST-Aware Git Radar</h3>
+        <p data-i18n="adv3_p1">Manual documentation is archaic. Let the Git Radar daemon observe your local <code>.git</code> trees dynamically.</p>
+        <p data-i18n="adv3_p2">It deciphers AST mutations, refactors, and commit diffs across your projects. Upon detecting complex architectural modifications, Open Brain automatically compiles and serializes a new semantic Knowledge Item.</p>
+      </div>
+      <div class="feature-visual fade-in" style="box-shadow: 0 0 40px rgba(251,191,36,0.1);">
+        <svg viewBox="0 0 200 200" width="100%" height="200px">
+          <!-- Radar Grid -->
+          <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(251,191,36,0.2)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="50" fill="none" stroke="rgba(251,191,36,0.2)" stroke-width="1"/>
+          <circle cx="100" cy="100" r="20" fill="none" stroke="rgba(251,191,36,0.4)" stroke-width="1"/>
+          <line x1="100" y1="20" x2="100" y2="180" stroke="rgba(251,191,36,0.2)" stroke-width="1"/>
+          <line x1="20" y1="100" x2="180" y2="100" stroke="rgba(251,191,36,0.2)" stroke-width="1"/>
+          <!-- Radar Sweep -->
+          <path d="M100 100 L100 20 A80 80 0 0 1 180 100 Z" fill="rgba(251,191,36,0.15)" class="anim-rotate" style="transform-origin: 100px 100px;"/>
+          <!-- Commits -->
+          <circle cx="140" cy="60" r="4" fill="#fbbf24" class="anim-pulse"/>
+          <circle cx="60" cy="120" r="3" fill="#fbbf24"/>
+          <circle cx="160" cy="140" r="5" fill="#f43f5e" class="anim-pulse" style="animation-delay: 1s"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Row 4: Encrypted API Vault -->
+    <div class="feature-row reverse">
+      <div class="feature-text fade-in">
+        <h3 style="background: linear-gradient(90deg, #fff, #4ade80); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-i18n="adv4_t">Cryptography Vault</h3>
+        <p data-i18n="adv4_p1">Never inject naked API keys into env files pushed accidentally to the origin. Open Brain acts as your secure keychain proxy.</p>
+        <p data-i18n="adv4_p2">Save your OpenAI, Anthropic, Gemini, or DB passwords centrally using Fernet mathematical encryption algorithms securely written to disk over restricted permissions. Map them dynamically when spinning your IDE instances.</p>
+      </div>
+      <div class="feature-visual fade-in" style="box-shadow: 0 0 40px rgba(74,222,128,0.1);">
+         <svg viewBox="0 0 200 200" width="100%" height="200px">
+           <!-- Lock Body -->
+           <rect x="65" y="90" width="70" height="50" rx="8" fill="none" stroke="#4ade80" stroke-width="3"/>
+           <!-- Shackle -->
+           <path d="M75 90 V 60 A 25 25 0 0 1 125 60 V 90" fill="none" stroke="#4ade80" stroke-width="3"/>
+           <!-- Keyhole -->
+           <circle cx="100" cy="110" r="6" fill="#4ade80"/>
+           <path d="M96 110 L94 125 L106 125 L104 110" fill="#4ade80"/>
+           <!-- Binary Rain -->
+           <text x="30" y="40" fill="#4ade80" opacity="0.3" font-family="monospace">0110</text>
+           <text x="150" y="60" fill="#4ade80" opacity="0.3" font-family="monospace">1001</text>
+           <text x="40" y="160" fill="#4ade80" opacity="0.3" font-family="monospace">1101</text>
+           <text x="160" y="150" fill="#4ade80" opacity="0.3" font-family="monospace">0010</text>
+         </svg>
+      </div>
+    </div>
+  </section>
+<!-- ═══ CIRCUIT DIVIDER ═══ -->
+  <div class="circuit-divider fade-in">
+    <svg viewBox="0 0 800 60" fill="none">
+      <path class="circuit-line" d="M0 30 H150 L170 15 H300 L320 45 H480 L500 15 H650 L670 30 H800" stroke="var(--accent)" stroke-width="1.5"/>
+      <circle class="circuit-dot" cx="170" cy="15" r="3" fill="var(--accent)"/>
+      <circle class="circuit-dot" cx="320" cy="45" r="3" fill="var(--pink)" style="animation-delay:0.4s"/>
+      <circle class="circuit-dot" cx="500" cy="15" r="3" fill="var(--accent)" style="animation-delay:0.8s"/>
+      <circle class="circuit-dot" cx="670" cy="30" r="3" fill="var(--pink)" style="animation-delay:1.1s"/>
+    </svg>
+  </div>
+
+  <!-- ═══ FEATURES ═══ -->
+  <section id="features">
+    <div class="section-label fade-in" data-i18n="feat_label">CAPABILITIES</div>
+    <h2 class="section-title fade-in fade-in-d1" data-i18n="feat_title">Everything you control<br>from a single place</h2>
+    <p class="section-desc fade-in fade-in-d2" data-i18n="feat_desc">Each tab is a production tool. No cloud APIs, no subscriptions. Your data, your machine.</p>
+
+    <div class="features-grid">
+      <div class="feature-card fade-in fade-in-d1">
+        <div class="feature-icon" style="background:rgba(0,255,200,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.5"><path d="M12 2C7 2 4 6 4 10c0 3 1.5 5.5 3.5 7v3c0 .5.5 1 1 1h7c.5 0 1-.5 1-1v-3c2-1.5 3.5-4 3.5-7 0-4-3-8-8-8z"><animate attributeName="stroke-opacity" values=".5;1;.5" dur="2s" repeatCount="indefinite"/></path><path d="M9 8c0 2 3 2 3 0M15 8c0 2-3 2-3 0M9 13c0 2 3 2 3 0M15 13c0 2-3 2-3 0" stroke-linecap="round"><animate attributeName="stroke-dasharray" values="0,50;50,0" dur="3s" repeatCount="indefinite"/></path></svg></div>
+        <h3 data-i18n="f1_t">🤖 Neural Terminal</h3>
+        <p data-i18n="f1_p">Chat with Llama 3.2 locally. Your AI understands your full runtime context without exposing a single byte to the internet.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d2">
+        <div class="feature-icon" style="background:rgba(255,45,149,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#e040fb" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8" opacity=".6"/><line x1="9" y1="11" x2="15" y2="11" opacity=".6"/><line x1="9" y1="14" x2="13" y2="14" opacity=".6"/><path d="M16 1v4M8 1v4" stroke-linecap="round"><animate attributeName="stroke-opacity" values=".4;1;.4" dur="1.5s" repeatCount="indefinite"/></path></svg></div>
+        <h3 data-i18n="f2_t">⚡ Prompt Vault</h3>
+        <p data-i18n="f2_p">Repository of reusable prompts with tagging, search, and one-click injection straight into the Neural Terminal execution.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d3">
+        <div class="feature-icon" style="background:rgba(0,212,255,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10" opacity=".5"/><circle cx="12" cy="10" r="2" fill="#00d4ff" opacity=".3"><animate attributeName="r" values="2;3;2" dur="2s" repeatCount="indefinite"/></circle></svg></div>
+        <h3 data-i18n="f3_t">📡 Knowledge Base</h3>
+        <p data-i18n="f3_p">Automatic indexing of architectural decisions and snippets into structured Knowledge Items. Encode sessions into persistent memory.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d4">
+        <div class="feature-icon" style="background:rgba(168,85,247,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4M4.2 19.8l2.8-2.8M17 7l2.8-2.8"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="8s" repeatCount="indefinite"/></path></svg></div>
+        <h3 data-i18n="f4_t">🔗 IDE Sync (UNION)</h3>
+        <p data-i18n="f4_p">Generates `.cursorrules`, `.windsurfrules`, and `CLAUDE.md` directives so every AI assistant syncs context back to Open Brain dynamically.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d5">
+        <div class="feature-icon" style="background:rgba(251,191,36,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5"><circle cx="8" cy="15" r="5"><animate attributeName="stroke-opacity" values=".5;1;.5" dur="2s" repeatCount="indefinite"/></circle><path d="M12 12l8-8M18 6l2 2M15 9l2 2" stroke-linecap="round"/></svg></div>
+        <h3 data-i18n="f5_t">🔑 API Manager</h3>
+        <p data-i18n="f5_p">Stop hardcoding sensitive keys. Store ANY API key in a secure vault to be magically recovered globally when a project requires it.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d6">
+        <div class="feature-icon" style="background:rgba(0,255,200,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#00e5ff" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><rect x="5" y="6" width="14" height="8" rx="1" fill="rgba(0,229,255,0.08)"><animate attributeName="fill-opacity" values=".05;.15;.05" dur="1.5s" repeatCount="indefinite"/></rect></svg></div>
+        <h3 data-i18n="f6_t">🖥️ Server Monitor</h3>
+        <p data-i18n="f6_p">Direct SSH live checks. Watch RAM, Disk, Docker containers, and PM2 processes entirely in real time to monitor stability and uptime.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d1">
+        <div class="feature-icon" style="background:rgba(255,45,149,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#e040fb" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M8 7h8M8 11h6" opacity=".5"><animate attributeName="stroke-dasharray" values="0,30;30,0" dur="3s" repeatCount="indefinite"/></path></svg></div>
+        <h3>🌐 MCP Server</h3>
+        <p data-i18n="f7_p">Exposes local intelligence across your entire IDE ecosystem with the Model Context Protocol to provide Llama 3.2 context inside Claude native.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d2">
+        <div class="feature-icon" style="background:rgba(0,212,255,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="10s" repeatCount="indefinite"/></path></svg></div>
+        <h3>🛠️ Maintenance Tools</h3>
+        <p data-i18n="f8_p">Surgical tools to find Zombie processes mapping your ports, nuclear cache wipers, and system log visualizers embedded.</p>
+      </div>
+      <div class="feature-card fade-in fade-in-d3">
+        <div class="feature-icon" style="background:rgba(179,136,255,0.1);"><svg viewBox="0 0 24 24" fill="none" stroke="#b388ff" stroke-width="1.5"><circle cx="12" cy="12" r="10" opacity=".3"/><circle cx="12" cy="12" r="6" opacity=".5"/><circle cx="12" cy="12" r="2" fill="#b388ff"><animate attributeName="r" values="2;3;2" dur="1.5s" repeatCount="indefinite"/><animate attributeName="fill-opacity" values=".5;1;.5" dur="1.5s" repeatCount="indefinite"/></circle><line x1="12" y1="2" x2="12" y2="6" opacity=".4"/><line x1="12" y1="18" x2="12" y2="22" opacity=".4"/><line x1="2" y1="12" x2="6" y2="12" opacity=".4"/><line x1="18" y1="12" x2="22" y2="12" opacity=".4"/></svg></div>
+        <h3 data-i18n="f9_t">🎯 Git Radar (Auto)</h3>
+        <p data-i18n="f9_p">Let the AI autonomously generate knowledge documentation based on raw `git diff` signals to update the system as soon as you finish coding.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TECH STACK ═══ -->
+  <section id="tech">
+    <div class="section-label fade-in" data-i18n="tech_label">ARCHITECTURE</div>
+    <h2 class="section-title fade-in fade-in-d1" data-i18n="tech_title">Built with production<br>grade tech</h2>
+    <p class="section-desc fade-in fade-in-d2" data-i18n="tech_desc">Modern stack, local-first, zero cloud dependencies. Everything runs on your machine.</p>
+
+    <div class="tech-grid">
+      <div class="tech-item fade-in"><div class="tech-dot" style="background:var(--accent);"></div>Electron 41</div>
+      <div class="tech-item fade-in fade-in-d1"><div class="tech-dot" style="background:var(--blue);"></div>React 19</div>
+      <div class="tech-item fade-in fade-in-d2"><div class="tech-dot" style="background:var(--pink);"></div>TypeScript 5</div>
+      <div class="tech-item fade-in fade-in-d3"><div class="tech-dot" style="background:var(--purple);"></div>Vite 8</div>
+      <div class="tech-item fade-in fade-in-d4"><div class="tech-dot" style="background:var(--accent);"></div>Tailwind CSS v4</div>
+      <div class="tech-item fade-in fade-in-d5"><div class="tech-dot" style="background:var(--blue);"></div>Framer Motion</div>
+      <div class="tech-item fade-in fade-in-d6"><div class="tech-dot" style="background:var(--pink);"></div>shadcn/ui</div>
+      <div class="tech-item fade-in"><div class="tech-dot" style="background:var(--purple);"></div>IPC Channels</div>
+      <div class="tech-item fade-in fade-in-d1"><div class="tech-dot" style="background:var(--accent);"></div>Node SSH2</div>
+      <div class="tech-item fade-in fade-in-d2"><div class="tech-dot" style="background:var(--blue);"></div>Local JSON Persistence</div>
+      <div class="tech-item fade-in fade-in-d3"><div class="tech-dot" style="background:var(--pink);"></div>Filesystem API</div>
+      <div class="tech-item fade-in fade-in-d4"><div class="tech-dot" style="background:var(--purple);"></div>macOS arm64 Native</div>
+    </div>
+  </section>
+
+  <!-- ═══ TECH CONSTELLATION ANIMATION ═══ -->
+  <div class="tech-constellation fade-in">
+    <canvas id="techCanvas"></canvas>
+    <div class="constellation-label">LIVE ARCHITECTURE MAP</div>
+  </div>
+
+  <!-- ═══ HOW IT WORKS ═══ -->
+  <section id="como">
+    <div class="section-label fade-in" data-i18n="how_label">WORKFLOW</div>
+    <h2 class="section-title fade-in fade-in-d1" data-i18n="how_title">How it works</h2>
+    <p class="section-desc fade-in fade-in-d2" data-i18n="how_desc">Install, open, and the panel syncs automatically with your environment.</p>
+
+    <div class="steps">
+      <div class="step fade-in">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3 data-i18n="s1_t">Install the DMG</h3>
+          <p data-i18n="s1_p">Download the native macOS arm64 installer. Drag to Applications. Lightning fast setup.</p>
+        </div>
+      </div>
+      <div class="step fade-in fade-in-d1">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3 data-i18n="s2_t">Auto-detection</h3>
+          <p data-i18n="s2_p">The panel automatically reads your ~/.openbrain/ repository and loads KI artifacts globally.</p>
+        </div>
+      </div>
+      <div class="step fade-in fade-in-d2">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3 data-i18n="s3_t">Live Context Injection</h3>
+          <p data-i18n="s3_p">Fire up the UNION IDE Sync modules to pass parameters directly to Claude Code or Cursor AI.</p>
+        </div>
+      </div>
+      <div class="step fade-in fade-in-d3">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3 data-i18n="s4_t">Activate Inference</h3>
+          <p data-i18n="s4_p">Operate via Neural Terminal asking Ollama Llama 3.2 1B questions regarding your local network infrastructure.</p>
+        </div>
+      </div>
+      <div class="step fade-in fade-in-d4">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h3 data-i18n="s5_t">Operate with absolute privacy</h3>
+          <p data-i18n="s5_p">Keep all code snippets on your host machine while giving agents supreme knowledge.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contacto">
+    <div class="section-label fade-in" data-i18n="cta_label">NEUTRAL OS DOWNLOAD</div>
+    <h2 class="section-title fade-in fade-in-d1" style="text-align:center;" data-i18n="cta_title">Deploy Natively</h2>
+    <p class="section-desc fade-in fade-in-d2" style="text-align:center;margin-left:auto;margin-right:auto;" data-i18n="cta_desc">
+      Optimized exclusively for macOS arm64 architecture (Apple Silicon). Download the `.dmg` package.<br>No cloud accounts needed.
+    </p>
+
+    <div class="form-container fade-in fade-in-d3" style="text-align:center;">
+      <div style="font-size:4rem;margin-bottom:1.5rem;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 10px var(--accent))"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+      <h3 style="font-family:'Orbitron',monospace;font-size:1.2rem;margin-bottom:0.8rem;background:linear-gradient(90deg,var(--accent),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;" data-i18n="cta_connect">Get the Master Build</h3>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:2rem;line-height:1.6;" data-i18n="cta_msg">
+        Download the verified DMG installer from the official shared repository. Installation takes less than 30 seconds.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:1rem; align-items:center; max-width:400px; margin: 0 auto;">
+        <a href="https://github.com/KrilinZ/open-brain" target="_blank" rel="noopener noreferrer" class="form-submit" style="display:inline-block;text-decoration:none;padding:1rem 3rem; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.4); color: #fff; box-shadow:none;" data-i18n="cta_github">
+          GITHUB REPO
+        </a>
+        <a href="https://drive.google.com/drive/folders/1E-FhJ4fenzVgVqnyUXU5bZflt_-n7uHn?usp=sharing" target="_blank" rel="noopener noreferrer" class="form-submit" style="display:inline-block;text-decoration:none;padding:1rem 3rem;" data-i18n="cta_btn">
+          DOWNLOAD DMG
+        </a>
+      </div>
+      <p style="color:var(--muted);font-size:0.75rem;margin-top:1.5rem;opacity:0.6;">Compiled by Nacho (v1.2.3)</p>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <span class="footer-brand">OPEN BRAIN OS v1.2.3</span>
+    <p data-i18n="footer_p1">100% OFF-GRID · Made for the autonomous development era</p>
+    <p style="margin-top:0.8rem;font-size:0.75rem;"><a href="https://github.com/KrilinZ/open-brain" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:none;opacity:0.7;transition:opacity 0.3s;font-family:monospace;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" data-i18n="footer_link">[ CMD ] OPEN_REPOSITORY</a></p>
+    <p style="margin-top:0.5rem;opacity:0.4;font-size:0.7rem;" data-i18n="footer_p2">The Neural OS for AI-First Development</p>
+  </footer>
+
+  <!-- Scripts para Partículas (tsParticles) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/engine@3.1.0/tsparticles.engine.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/basic@3.1.0/tsparticles.basic.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/interaction-particles-links@3.1.0/tsparticles.interaction.particles.links.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/move-base@3.1.0/tsparticles.move.base.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/shape-circle@3.1.0/tsparticles.shape.circle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/color-style@3.1.0/tsparticles.color.style.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tsparticles/interaction-events@3.1.0/tsparticles.interaction.events.min.js"></script>
+  
+  <script>
+    // Configuración de tsParticles Cyberpunk
+    (async () => {
+      await loadColorStyle(tsParticles);
+      await loadCircleShape(tsParticles);
+      await loadBaseMover(tsParticles);
+      await loadParticlesLinksInteraction(tsParticles);
+      await loadEventsInteraction(tsParticles);
+      await loadBasic(tsParticles);
+
+      await tsParticles.load({
+        id: "tsparticles",
+        options: {
+          background: { color: { value: "transparent" } },
+          fpsLimit: 60,
+          interactivity: {
+            events: {
+              onHover: { enable: true, mode: "grab" },
+            },
+            modes: {
+        adv1_t: 'Sincronización UNION (Deep Context)',
+        adv1_p1: 'Pierdes tokens repitiendo tus decisiones de arquitectura a Windsurf, Cursor o Aider por separado.',
+        adv1_p2: 'Open Brain opera como un daemon central que compila tus KIs y el track de Git, inyectándolos en reglas globales <code>.cursorrules</code>, <code>CLAUDE.md</code> y <code>.windsurfrules</code> en intervalos de milisegundos.',
+        adv1_l1: 'Inyección nativa a agentes por CLI y GUI.',
+        adv1_l2: 'Limpieza automática de huellas residuales y caché global.',
+        adv2_t: 'Inferencia 100% OFF-GRID',
+        adv2_p1: 'Invoca el modelo Llama 3.2 1B de Ollama nativamente. El Motor Neuronal analiza diferencias de código, logs y procesos sin transmutar ni un solo byte hacia firewalls externos.',
+        adv2_p2: 'Aislamiento nivel paranoico. Corta tu Wi-Fi. Evalúa credenciales crudas o escanea puertos SSH sin depender de APIs en la nube.',
+        adv3_t: 'Git Radar (Sensible a AST)',
+        adv3_p1: 'La documentación manual es obsoleta. Asigna al daemon Git Radar la vigilancia de tus árboles <code>.git</code>.',
+        adv3_p2: 'Descifra mutaciones del Sintax Tree (AST), refactorizaciones y diffs masivos entre commits en paralelo. Al identificar eventos clave, Open Brain transpila los deltas semánticos en un Knowledge Item imborrable.',
+        adv4_t: 'Bóveda Criptográfica',
+        adv4_p1: 'Evita insertar keys crudas en archivos env propensos a comitearse accidentalmente. Open Brain toma el poder como proxy local.',
+        adv4_p2: 'Guarda contraseñas para OpenAI, Anthropic, Gemini o bases de SQL asumiendo encriptación matemática Fernet con acceso de disco restringido CMOD. Mapeo on-the-fly al levantar tus IDEs.',
+
+              grab: { distance: 250, links: { opacity: 0.8, color: "#e040fb" } }
+            }
+          },
+          particles: {
+        adv1_t: 'Sincronización UNION (Deep Context)',
+        adv1_p1: 'Pierdes tokens repitiendo tus decisiones de arquitectura a Windsurf, Cursor o Aider por separado.',
+        adv1_p2: 'Open Brain opera como un daemon central que compila tus KIs y el track de Git, inyectándolos en reglas globales <code>.cursorrules</code>, <code>CLAUDE.md</code> y <code>.windsurfrules</code> en intervalos de milisegundos.',
+        adv1_l1: 'Inyección nativa a agentes por CLI y GUI.',
+        adv1_l2: 'Limpieza automática de huellas residuales y caché global.',
+        adv2_t: 'Inferencia 100% OFF-GRID',
+        adv2_p1: 'Invoca el modelo Llama 3.2 1B de Ollama nativamente. El Motor Neuronal analiza diferencias de código, logs y procesos sin transmutar ni un solo byte hacia firewalls externos.',
+        adv2_p2: 'Aislamiento nivel paranoico. Corta tu Wi-Fi. Evalúa credenciales crudas o escanea puertos SSH sin depender de APIs en la nube.',
+        adv3_t: 'Git Radar (Sensible a AST)',
+        adv3_p1: 'La documentación manual es obsoleta. Asigna al daemon Git Radar la vigilancia de tus árboles <code>.git</code>.',
+        adv3_p2: 'Descifra mutaciones del Sintax Tree (AST), refactorizaciones y diffs masivos entre commits en paralelo. Al identificar eventos clave, Open Brain transpila los deltas semánticos en un Knowledge Item imborrable.',
+        adv4_t: 'Bóveda Criptográfica',
+        adv4_p1: 'Evita insertar keys crudas en archivos env propensos a comitearse accidentalmente. Open Brain toma el poder como proxy local.',
+        adv4_p2: 'Guarda contraseñas para OpenAI, Anthropic, Gemini o bases de SQL asumiendo encriptación matemática Fernet con acceso de disco restringido CMOD. Mapeo on-the-fly al levantar tus IDEs.',
+
+            color: { value: ["#00e5ff", "#e040fb", "#ffffff"] },
+            links: {
+              color: "random", distance: 180, enable: true,
+              opacity: 0.4, width: 2,
+              triangles: {
+        adv1_t: 'Sincronización UNION (Deep Context)',
+        adv1_p1: 'Pierdes tokens repitiendo tus decisiones de arquitectura a Windsurf, Cursor o Aider por separado.',
+        adv1_p2: 'Open Brain opera como un daemon central que compila tus KIs y el track de Git, inyectándolos en reglas globales <code>.cursorrules</code>, <code>CLAUDE.md</code> y <code>.windsurfrules</code> en intervalos de milisegundos.',
+        adv1_l1: 'Inyección nativa a agentes por CLI y GUI.',
+        adv1_l2: 'Limpieza automática de huellas residuales y caché global.',
+        adv2_t: 'Inferencia 100% OFF-GRID',
+        adv2_p1: 'Invoca el modelo Llama 3.2 1B de Ollama nativamente. El Motor Neuronal analiza diferencias de código, logs y procesos sin transmutar ni un solo byte hacia firewalls externos.',
+        adv2_p2: 'Aislamiento nivel paranoico. Corta tu Wi-Fi. Evalúa credenciales crudas o escanea puertos SSH sin depender de APIs en la nube.',
+        adv3_t: 'Git Radar (Sensible a AST)',
+        adv3_p1: 'La documentación manual es obsoleta. Asigna al daemon Git Radar la vigilancia de tus árboles <code>.git</code>.',
+        adv3_p2: 'Descifra mutaciones del Sintax Tree (AST), refactorizaciones y diffs masivos entre commits en paralelo. Al identificar eventos clave, Open Brain transpila los deltas semánticos en un Knowledge Item imborrable.',
+        adv4_t: 'Bóveda Criptográfica',
+        adv4_p1: 'Evita insertar keys crudas en archivos env propensos a comitearse accidentalmente. Open Brain toma el poder como proxy local.',
+        adv4_p2: 'Guarda contraseñas para OpenAI, Anthropic, Gemini o bases de SQL asumiendo encriptación matemática Fernet con acceso de disco restringido CMOD. Mapeo on-the-fly al levantar tus IDEs.',
+ enable: true, opacity: 0.05 }
+            },
+            move: {
+              direction: "none", enable: true, outModes: {
+        adv1_t: 'Sincronización UNION (Deep Context)',
+        adv1_p1: 'Pierdes tokens repitiendo tus decisiones de arquitectura a Windsurf, Cursor o Aider por separado.',
+        adv1_p2: 'Open Brain opera como un daemon central que compila tus KIs y el track de Git, inyectándolos en reglas globales <code>.cursorrules</code>, <code>CLAUDE.md</code> y <code>.windsurfrules</code> en intervalos de milisegundos.',
+        adv1_l1: 'Inyección nativa a agentes por CLI y GUI.',
+        adv1_l2: 'Limpieza automática de huellas residuales y caché global.',
+        adv2_t: 'Inferencia 100% OFF-GRID',
+        adv2_p1: 'Invoca el modelo Llama 3.2 1B de Ollama nativamente. El Motor Neuronal analiza diferencias de código, logs y procesos sin transmutar ni un solo byte hacia firewalls externos.',
+        adv2_p2: 'Aislamiento nivel paranoico. Corta tu Wi-Fi. Evalúa credenciales crudas o escanea puertos SSH sin depender de APIs en la nube.',
+        adv3_t: 'Git Radar (Sensible a AST)',
+        adv3_p1: 'La documentación manual es obsoleta. Asigna al daemon Git Radar la vigilancia de tus árboles <code>.git</code>.',
+        adv3_p2: 'Descifra mutaciones del Sintax Tree (AST), refactorizaciones y diffs masivos entre commits en paralelo. Al identificar eventos clave, Open Brain transpila los deltas semánticos en un Knowledge Item imborrable.',
+        adv4_t: 'Bóveda Criptográfica',
+        adv4_p1: 'Evita insertar keys crudas en archivos env propensos a comitearse accidentalmente. Open Brain toma el poder como proxy local.',
+        adv4_p2: 'Guarda contraseñas para OpenAI, Anthropic, Gemini o bases de SQL asumiendo encriptación matemática Fernet con acceso de disco restringido CMOD. Mapeo on-the-fly al levantar tus IDEs.',
+ default: "bounce" },
+              random: true, speed: 1.5, straight: false
+            },
+            number: { density: { enable: true, width: 1000 }, value: 120 },
+            opacity: { value: { min: 0.5, max: 0.9 } },
+            shape: { type: "circle" },
+            size: { value: { min: 2, max: 5 }, animation: { enable: true, speed: 2, sync: false } }
+          },
+          detectRetina: true
+        }
+      });
+    })();
+
+    // Intersection observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          // Only animate once, then unobserve to keep it visible
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // Nav blur effect on scroll
+    window.addEventListener('scroll', () => {
+      const nav = document.querySelector('nav');
+      if (window.scrollY > 50) {
+        nav.classList.add('scrolled');
+      } else {
+        nav.classList.remove('scrolled');
+      }
+    });
+
+    // Dynamic mouse glow for cards
+    const trackMouse = (e) => {
+      const cards = document.querySelectorAll('.feature-card, .vp-card, .tech-item');
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+    };
+    window.addEventListener('mousemove', trackMouse);
+
+    // ═══ ANIMATED COUNTERS ═══
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const nums = e.target.querySelectorAll('.stat-number');
+          nums.forEach(num => {
+            const final = num.textContent;
+            const match = final.match(/(\d+)/);
+            if (match) {
+              const target = parseInt(match[1]);
+              const prefix = final.slice(0, final.indexOf(match[1]));
+              const suffix = final.slice(final.indexOf(match[1]) + match[1].length);
+              let current = 0;
+              const step = Math.max(1, Math.floor(target / 30));
+              const timer = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(timer); }
+                num.textContent = prefix + current + suffix;
+              }, 40);
+            }
+          });
+          counterObserver.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.5 });
+    const statsBar = document.querySelector('.stats-bar');
+    if (statsBar) counterObserver.observe(statsBar);
+
+    // ═══ HACKER TERMINAL TYPING ═══
+    const terminalLines = [
+      { text: 'antigravity --init brain', type: 'prompt', delay: 500 },
+      { text: '[OK] Módulo Antigravity Brain cargado', type: 'success', delay: 800 },
+      { text: 'Escaneando ~/.gemini/antigravity/...', type: 'output', delay: 600 },
+      { text: 'antigravity scan --sessions', type: 'prompt', delay: 1000 },
+      { text: '→ 24 sesiones activas | 156 artefactos | 38 KIs', type: 'success', delay: 700 },
+      { text: 'antigravity autopilot --start', type: 'prompt', delay: 900 },
+      { text: '[AUTOPILOT] Limpieza .resolved: 12 archivos', type: 'output', delay: 500 },
+      { text: '[AUTOPILOT] Integridad: 100% ✓', type: 'success', delay: 400 },
+      { text: '[AUTOPILOT] Sync KIs: 3 nuevos generados', type: 'success', delay: 500 },
+      { text: 'Sistema operativo. Modo autopilot activo.', type: 'success', delay: 0 },
+    ];
+    const termBody = document.querySelector('.terminal-body');
+    if (termBody) {
+      let totalDelay = 2000;
+      terminalLines.forEach((line, i) => {
+        totalDelay += line.delay;
+        setTimeout(() => {
+          const el = document.createElement('div');
+          el.className = `line ${line.type}`;
+          el.style.animationDelay = '0s';
+          el.textContent = line.text;
+          if (i === terminalLines.length - 1) el.classList.add('cursor-blink');
+          termBody.appendChild(el);
+          termBody.scrollTop = termBody.scrollHeight;
+        }, totalDelay);
+      });
+    }
+
+    // ═══ TECH CONSTELLATION — CANVAS ANIMATION ═══
+    (function() {
+      const canvas = document.getElementById('techCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      let W, H, cx, cy, mouseX = -9999, mouseY = -9999;
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        W = rect.width; H = rect.height;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cx = W / 2; cy = H / 2;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+      canvas.addEventListener('mousemove', e => {
+        const r = canvas.getBoundingClientRect();
+        mouseX = e.clientX - r.left; mouseY = e.clientY - r.top;
+      });
+      canvas.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+      // Tech nodes
+      const techs = [
+        { name: 'Electron', color: '#00e5ff', orbit: 160, speed: 0.004, angle: 0, size: 26 },
+        { name: 'React', color: '#61dafb', orbit: 160, speed: -0.005, angle: 2.1, size: 24 },
+        { name: 'TypeScript', color: '#e040fb', orbit: 200, speed: 0.003, angle: 0.8, size: 22 },
+        { name: 'Vite', color: '#b388ff', orbit: 200, speed: -0.004, angle: 3.5, size: 21 },
+        { name: 'Tailwind', color: '#00e5ff', orbit: 245, speed: 0.002, angle: 1.5, size: 20 },
+        { name: 'Framer', color: '#00bcd4', orbit: 245, speed: -0.003, angle: 4.2, size: 19 },
+        { name: 'shadcn', color: '#e040fb', orbit: 290, speed: 0.0025, angle: 2.8, size: 18 },
+        { name: 'IPC', color: '#fbbf24', orbit: 290, speed: -0.0035, angle: 5.5, size: 19 },
+        { name: 'SSH2', color: '#4ade80', orbit: 335, speed: 0.002, angle: 0.3, size: 17 },
+        { name: 'JSON', color: '#00bcd4', orbit: 335, speed: -0.0025, angle: 3.0, size: 17 },
+        { name: 'FS API', color: '#e040fb', orbit: 335, speed: 0.0018, angle: 5.0, size: 16 },
+        { name: 'arm64', color: '#fbbf24', orbit: 335, speed: -0.002, angle: 1.8, size: 18 },
+      ];
+
+      // Data particles flowing between nodes
+      const particles = [];
+      function spawnParticle() {
+        const a = techs[Math.floor(Math.random() * techs.length)];
+        const b = techs[Math.floor(Math.random() * techs.length)];
+        if (a === b) return;
+        particles.push({
+          ax: cx + Math.cos(a.angle) * a.orbit, ay: cy + Math.sin(a.angle) * a.orbit * 0.45,
+          bx: cx + Math.cos(b.angle) * b.orbit, by: cy + Math.sin(b.angle) * b.orbit * 0.45,
+          t: 0, speed: 0.008 + Math.random() * 0.012,
+          color: a.color, size: 1.5 + Math.random() * 1.5
+        });
+      }
+
+      // Ring particles (orbiting debris)
+      const ringParticles = [];
+      for (let i = 0; i < 80; i++) {
+        ringParticles.push({
+          orbit: 130 + Math.random() * 240,
+          angle: Math.random() * Math.PI * 2,
+          speed: (0.001 + Math.random() * 0.003) * (Math.random() > 0.5 ? 1 : -1),
+          size: 0.5 + Math.random() * 1.5,
+          alpha: 0.1 + Math.random() * 0.4
+        });
+      }
+
+      let frame = 0;
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        frame++;
+
+        // Background grid
+        ctx.strokeStyle = 'rgba(0,229,255,0.03)';
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+        for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+        // Orbit rings
+        [160, 200, 245, 290, 335].forEach((r, i) => {
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, r, r * 0.45, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(0,229,255,${0.06 + i * 0.01})`;
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([4, 8]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        });
+
+        // Rotating scanning line
+        const scanAngle = frame * 0.008;
+        const gradient = ctx.createLinearGradient(
+          cx, cy,
+          cx + Math.cos(scanAngle) * 370,
+          cy + Math.sin(scanAngle) * 370 * 0.45
+        );
+        gradient.addColorStop(0, 'rgba(0,229,255,0.15)');
+        gradient.addColorStop(1, 'rgba(0,229,255,0)');
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(scanAngle) * 370, cy + Math.sin(scanAngle) * 370 * 0.45);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Ring debris
+        ringParticles.forEach(p => {
+          p.angle += p.speed;
+          const px = cx + Math.cos(p.angle) * p.orbit;
+          const py = cy + Math.sin(p.angle) * p.orbit * 0.45;
+          ctx.beginPath();
+          ctx.arc(px, py, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0,229,255,${p.alpha})`;
+          ctx.fill();
+        });
+
+        // Connection lines between nearby nodes
+        for (let i = 0; i < techs.length; i++) {
+          for (let j = i + 1; j < techs.length; j++) {
+            const a = techs[i], b = techs[j];
+            const ax = cx + Math.cos(a.angle) * a.orbit;
+            const ay = cy + Math.sin(a.angle) * a.orbit * 0.45;
+            const bx = cx + Math.cos(b.angle) * b.orbit;
+            const by = cy + Math.sin(b.angle) * b.orbit * 0.45;
+            const dist = Math.hypot(ax - bx, ay - by);
+            if (dist < 200) {
+              ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+              ctx.strokeStyle = `rgba(224,64,251,${0.15 * (1 - dist / 200)})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Spawn + draw data particles
+        if (frame % 8 === 0) spawnParticle();
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.t += p.speed;
+          if (p.t > 1) { particles.splice(i, 1); continue; }
+          const x = p.ax + (p.bx - p.ax) * p.t;
+          const y = p.ay + (p.by - p.ay) * p.t;
+          ctx.beginPath();
+          ctx.arc(x, y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+
+        // Draw core
+        const coreGlow = 15 + Math.sin(frame * 0.03) * 5;
+        const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
+        coreGrad.addColorStop(0, 'rgba(0,229,255,0.25)');
+        coreGrad.addColorStop(0.5, 'rgba(224,64,251,0.1)');
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+        ctx.fillStyle = coreGrad; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, coreGlow, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,229,255,0.6)'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.font = '900 11px Orbitron';
+        ctx.fillStyle = '#00e5ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('BRAIN', cx, cy - 4);
+        ctx.font = '600 7px Orbitron'; ctx.fillStyle = 'rgba(224,64,251,0.8)';
+        ctx.fillText('CORE', cx, cy + 8);
+
+        // Tech nodes
+        techs.forEach(t => {
+          t.angle += t.speed;
+          let nx = cx + Math.cos(t.angle) * t.orbit;
+          let ny = cy + Math.sin(t.angle) * t.orbit * 0.45;
+
+          // Mouse attraction
+          const mdx = mouseX - nx, mdy = mouseY - ny;
+          const md = Math.hypot(mdx, mdy);
+          if (md < 120 && md > 0) {
+            const force = (120 - md) * 0.15;
+            nx += (mdx / md) * force;
+            ny += (mdy / md) * force;
+          }
+
+          // Neon glow trail
+          ctx.beginPath();
+          for (let s = 0; s < 12; s++) {
+            const ta = t.angle - t.speed * s * 3;
+            const tx = cx + Math.cos(ta) * t.orbit;
+            const ty = cy + Math.sin(ta) * t.orbit * 0.45;
+            if (s === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
+          }
+          ctx.strokeStyle = t.color.replace(')', ',0.15)').replace('rgb', 'rgba');
+          ctx.lineWidth = t.size * 0.6;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          // Node circle
+          ctx.beginPath(); ctx.arc(nx, ny, t.size * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = t.color; ctx.shadowColor = t.color; ctx.shadowBlur = 15;
+          ctx.fill(); ctx.shadowBlur = 0;
+
+          // Outer ring
+          ctx.beginPath(); ctx.arc(nx, ny, t.size * 0.7, 0, Math.PI * 2);
+          ctx.strokeStyle = t.color; ctx.lineWidth = 1; ctx.globalAlpha = 0.4;
+          ctx.stroke(); ctx.globalAlpha = 1;
+
+          // Label
+          ctx.font = `600 ${Math.max(9, t.size * 0.55)}px Inter, sans-serif`;
+          ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+          ctx.fillText(t.name, nx, ny + t.size * 0.7 + 12);
+        });
+
+        // Mouse pointer glow
+        if (mouseX > 0 && mouseY > 0) {
+          const mg = ctx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 80);
+          mg.addColorStop(0, 'rgba(224,64,251,0.08)'); mg.addColorStop(1, 'transparent');
+          ctx.beginPath(); ctx.arc(mouseX, mouseY, 80, 0, Math.PI * 2);
+          ctx.fillStyle = mg; ctx.fill();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      // Start when visible
+      const constelObs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { draw(); constelObs.disconnect(); }
+      }, { threshold: 0.2 });
+      constelObs.observe(canvas);
+    })();
+
+    // ═══ FLOATING PARTICLES CANVAS (infographic style) ═══
+    (function() {
+      const fc = document.createElement('canvas');
+      fc.id = 'floatingParticles';
+      fc.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;';
+      document.body.prepend(fc);
+      const fctx = fc.getContext('2d');
+      let fW, fH;
+      function fResize() { fW = fc.width = window.innerWidth; fH = fc.height = window.innerHeight; }
+      fResize(); window.addEventListener('resize', fResize);
+
+      const dots = [];
+      const colors = ['#00e5ff','#e040fb','#b388ff','#4ade80'];
+      for (let i = 0; i < 50; i++) {
+        dots.push({
+          x: Math.random() * 2000, y: Math.random() * 5000,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: -(Math.random() * 0.6 + 0.15),
+          r: Math.random() * 2 + 0.5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: Math.random() * 0.4 + 0.1
+        });
+      }
+      function fDraw() {
+        fctx.clearRect(0, 0, fW, fH);
+        const scrollY = window.scrollY;
+        dots.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          if (p.y < -20) { p.y = fH + 20 + scrollY; p.x = Math.random() * fW; }
+          if (p.x < -20) p.x = fW + 20;
+          if (p.x > fW + 20) p.x = -20;
+          const screenY = p.y - scrollY;
+          if (screenY > -20 && screenY < fH + 20) {
+            fctx.beginPath();
+            fctx.arc(p.x, screenY, p.r, 0, Math.PI * 2);
+            fctx.fillStyle = p.color;
+            fctx.globalAlpha = p.alpha;
+            fctx.fill();
+            fctx.globalAlpha = 1;
+          }
+        });
+        requestAnimationFrame(fDraw);
+      }
+      fDraw();
+    })();
+
+    // ═══ i18n LANGUAGE SWITCHER ═══
+    const i18n = {
+      es: {
+        adv1_t: 'Sincronización UNION (Deep Context)',
+        adv1_p1: 'Pierdes tokens repitiendo tus decisiones de arquitectura a Windsurf, Cursor o Aider por separado.',
+        adv1_p2: 'Open Brain opera como un daemon central que compila tus KIs y el track de Git, inyectándolos en reglas globales <code>.cursorrules</code>, <code>CLAUDE.md</code> y <code>.windsurfrules</code> en intervalos de milisegundos.',
+        adv1_l1: 'Inyección nativa a agentes por CLI y GUI.',
+        adv1_l2: 'Limpieza automática de huellas residuales y caché global.',
+        adv2_t: 'Inferencia 100% OFF-GRID',
+        adv2_p1: 'Invoca el modelo Llama 3.2 1B de Ollama nativamente. El Motor Neuronal analiza diferencias de código, logs y procesos sin transmutar ni un solo byte hacia firewalls externos.',
+        adv2_p2: 'Aislamiento nivel paranoico. Corta tu Wi-Fi. Evalúa credenciales crudas o escanea puertos SSH sin depender de APIs en la nube.',
+        adv3_t: 'Git Radar (Sensible a AST)',
+        adv3_p1: 'La documentación manual es obsoleta. Asigna al daemon Git Radar la vigilancia de tus árboles <code>.git</code>.',
+        adv3_p2: 'Descifra mutaciones del Sintax Tree (AST), refactorizaciones y diffs masivos entre commits en paralelo. Al identificar eventos clave, Open Brain transpila los deltas semánticos en un Knowledge Item imborrable.',
+        adv4_t: 'Bóveda Criptográfica',
+        adv4_p1: 'Evita insertar keys crudas en archivos env propensos a comitearse accidentalmente. Open Brain toma el poder como proxy local.',
+        adv4_p2: 'Guarda contraseñas para OpenAI, Anthropic, Gemini o bases de SQL asumiendo encriptación matemática Fernet con acceso de disco restringido CMOD. Mapeo on-the-fly al levantar tus IDEs.',
+
+        nav_features:'Features',nav_how:'Flujo',nav_manual:'Doc',nav_get:'Contacto',nav_cta:'Descargar App →',
+        hero_sub:'El <strong>Sistema Operativo Neuronal</strong> para desarrollo iterativo con múltiples IAs.<br>Sincroniza el contexto entre Cursor, Windsurf, Claude Code y Aider en un panel único y seguro.<br><strong style="color:var(--accent);font-size:0.95rem;">100% OFF-GRID · Código Abierto · Telemetría Cero</strong>',
+        hero_btn1:'Descargar Versión DMG',hero_btn2:'Ver Features ↓',
+        mock_sessions:'Nodos',mock_artifacts:'KIs Sync',mock_atrisk:'Latencia',mock_security:'Seguridad total',mock_prompts:'Prompts externalizados',
+        stat_tabs:'Tabs Especializados',
+        vp1_title:'Unifica el Contexto de tus IAs',vp1_p1:'Cursor no sabe lo que hizo Windsurf. Claude Code ignora tu última sesión de Aider. El contexto se rompe entre herramientas.',vp1_p2:'<strong>Open Brain</strong> lo soluciona sincronizando todo en una bóveda central. Cada archivo y decisión queda globalmente disponible para cualquier IDE.',
+        vp2_title:'Motor de Inferencia Local',vp2_p1:'Ejecuta <strong>Llama 3.2 1B</strong> de manera autónoma dentro del Neural OS. Escanea tu infraestructura de forma offline y segura.',vp2_p2:'Aprovecha procesamiento <strong style="color:var(--pink);">100% local</strong> para analizar diffs de código y servidores zombie sin que tus datos toquen la nube.',
+        vp3_p1:'Open Brain integra una interfaz unificada para mantener tus entornos limpios y monitoreados <strong>en vivo</strong>:',vp3_li1:'Monitoriza Servidores vía SSH (RAM/Docker/PM2)',vp3_li2:'Bóveda de APIs universal con encriptación',vp3_li3:'Modo Git Radar para procesar cambios en ramas',vp3_li4:'Sincronización MCP para inyectar entorno en IDEs',vp3_li5:'Módulo de limpieza nuclear de cachés zombies',
+        vp4_p1:'Open Brain está matemáticamente restringido de hacer envíos a internet. Todo se lee/escribe a nivel local en:',vp4_p2:'Tus datos nunca salen de tu máquina. Cero tracking. Telemetría Cero.',
+        feat_label:'CAPACIDADES',feat_title:'Todo lo que controlas<br>desde un solo lugar',feat_desc:'Cada tab es una herramienta de producción pensada para agilizar el uso de editores IA.',
+        f1_t:'🤖 Terminal Neuronal',f1_p:'Habla con Llama 3.2 localmente. La IA entiende el contexto de tu runtime sin exponer un solo byte a la red.',
+        f2_t:'⚡ Prompt Vault',f2_p:'Repositorio de prompts reutilizables e inyección directa en tus agentes (Windsurf, Cursor) con un clic.',
+        f3_t:'📡 Base de Conocimiento',f3_p:'Indexado automático de decisiones arquitectónicas y snippets en Knowledge Items listos para reutilizar.',
+        f4_t:'🔗 IDE Sync (UNION)',f4_p:'Genera directivas .cursorrules, .windsurfrules y CLAUDE.md para que cada asistente inyecte contexto dinámicamente.',
+        f5_t:'🔑 API Manager',f5_p:'No más keys en el código. Guarda cualquier API Key en una bóveda cifrada, disponible globalmente para los agentes.',
+        f6_t:'🖥️ Monitor de Servidores',f6_p:'Pruebas SSH en vivo. Vigila RAM, Disco, Docker y PM2 en tiempo real para observar caídas por IA.',
+        f7_p:'Supervisa tu entorno completo exponiendo inteligencia local vía Model Context Protocol hacia Claude y otros.',
+        f8_p:'Herramientas quirúrgicas para aniquilar procesos Zombies mapeando tus puertos y visualizar flujos directos.',
+        f9_t:'🎯 Git Radar (Auto)',f9_p:'Permite que la IA documente y actualice KIs leyendo las señales de diff del repositorio para que nadie pierda hilo.',
+        tech_label:'ARQUITECTURA',tech_title:'Construido con tech<br>de producción',tech_desc:'Stack moderno, puramente local. Electrón + React + Llama 3.2.',
+        how_label:'FLUJO DE TRABAJO',how_title:'Sincronización letal',how_desc:'Instala, ejecuta Open Brain, y arranca cualquier modelo IA de tu IDE favorito.',
+        s1_t:'Instala el DMG',s1_p:'Descarga el instalador nativo para macOS arm64. Súper rápido, zero bloatware.',
+        s2_t:'Auto-detección',s2_p:'El panel localiza instantáneamente tu bóveda ~/.openbrain/ y extrae todos los artefactos globales.',
+        s3_t:'Inyección de Contexto',s3_p:'Activa los módulos UNION IDE Sync para enviar datos a Claude Code o Cursor.',
+        s4_t:'Activa Inferencia Local',s4_p:'Utiliza el terminal Neural para preguntar a Ollama Llama 3.2 1B sobre la topografía local off-grid.',
+        s5_t:'Privacidad Absoluta',s5_p:'La telemetría está desactivada por defecto. Eres el dueño al 100% de la lógica inyectada en tus LLMs.',
+        cta_label:'DESCARGA DISPONIBLE',cta_title:'Instalación Nativa macOS',cta_desc:'Instalador offline auto-contenido optimizado 100% para Apple Silicon (M1/M2/M3).<br>No requiere creación de cuentas web.',
+        cta_github:'VER CÓDIGO (GITHUB)',
+        cta_connect:'Descarga la Última Build',cta_msg:'Descarga el instalador DMG verificado oficial. No ejecutamos procesos en background de sistema, instalación totalmente limpia.',cta_btn:'DESCARGAR DMG (DRIVE)',
+        footer_p1:'100% OFF-GRID · Creado para la era del auto-desarrollo',footer_link:'[ CMD ] ABRIR_REPOSITORIO',footer_p2:'El Neural OS optimizado para desarrollo con IA'
+      },
+      en: {
+        adv1_t: 'Deep Context UNION Sync',
+        adv1_p1: 'Stop wasting API tokens re-explaining architectures to Windsurf, Cursor, and Aider individually.',
+        adv1_p2: 'Open Brain operates as a central daemon that seamlessly compiles your Git tracking data and Knowledge Items into global standard <code>.cursorrules</code>, <code>CLAUDE.md</code>, and <code>.windsurfrules</code> files in millisecond sync intervals.',
+        adv1_l1: 'Native injection into CLI and GUI agents.',
+        adv1_l2: 'Automatic residual footprint and global cache cleanups.',
+        adv2_t: '100% OFF-GRID Inference',
+        adv2_p1: "Invoke Ollama's Llama 3.2 1B natively from the control terminal. The Neural Engine analyzes code diffs, logs, and processes without transmitting a single byte outside your firewall.",
+        adv2_p2: 'Paranoia-grade isolation. You can parse proprietary infrastructure, monitor raw SSH ports, and evaluate secret-laden env files knowing you are completely decoupled from external APIs.',
+        adv3_t: 'AST-Aware Git Radar',
+        adv3_p1: 'Manual documentation is archaic. Let the Git Radar daemon observe your local <code>.git</code> trees dynamically.',
+        adv3_p2: 'It deciphers AST mutations, refactors, and commit diffs across your projects. Upon detecting complex architectural modifications, Open Brain automatically compiles and serializes a new semantic Knowledge Item.',
+        adv4_t: 'Cryptography Vault',
+        adv4_p1: 'Never inject naked API keys into env files pushed accidentally to the origin. Open Brain acts as your secure keychain proxy.',
+        adv4_p2: 'Save your OpenAI, Anthropic, Gemini, or DB passwords centrally using Fernet mathematical encryption algorithms securely written to disk over restricted permissions. Map them dynamically when spinning your IDE instances.',
+
+        nav_features:'Features',nav_how:'Workflow',nav_manual:'Docs',nav_get:'Contact',nav_cta:'Download App →',
+        hero_sub:'The <strong>Neural OS</strong> for rapid AI-assisted development.<br>Synchronize context effortlessly between Cursor, Windsurf, Claude Code and Aider.<br><strong style="color:var(--accent);font-size:0.95rem;">100% OFF-GRID · Open Source · Zero Telemetry</strong>',
+        hero_btn1:'Download DMG Release',hero_btn2:'See Features ↓',
+        mock_sessions:'Nodes',mock_artifacts:'KIs Sync',mock_atrisk:'Latency',mock_security:'Total security',mock_prompts:'Externalized prompts',
+        stat_tabs:'Specialized Tabs',
+        vp1_title:'Unify Fragmented AI Context',vp1_p1:'Cursor doesn\'t know what Windsurf did. Claude Code has no memory of your last Aider session. Context fragments.',vp1_p2:'<strong>Open Brain</strong> fixes this by syncing everything into a single central vault globally available for any IDE.',
+        vp2_title:'Local Inference Engine',vp2_p1:'Run <strong>Llama 3.2 1B</strong> autonomously within the Neural OS. It scans your complete infrastructure safely offline.',vp2_p2:'Leverage <strong style="color:var(--pink);">100% local processing</strong> to inspect code diffs and zombie servers anonymously.',
+        vp3_p1:'Open Brain features a unified interface to keep your environments clean and monitored <strong>live</strong>:',vp3_li1:'Monitor Servers via SSH (RAM/Docker/PM2)',vp3_li2:'Universal API vault with hyper-encryption',vp3_li3:'Git Radar mode to ingest code changes',vp3_li4:'MCP Sync to inject knowledge dynamically',vp3_li5:'Nuclear cache wiping module for AI orphans',
+        vp4_p1:'Open Brain is mathematically restricted from internet transmission. Everything is read and written directly to your local disk at:',vp4_p2:'Your data never leaves your machine. Zero tracking. Zero telemetry.',
+        feat_label:'CAPABILITIES',feat_title:'The Ultimate Hub<br>for multi-AI Devs',feat_desc:'Each tab equips your local system to serve data globally across your CLI agents.',
+        f1_t:'🤖 Neural Terminal',f1_p:'Chat with Llama 3.2 locally. Your AI understands your full runtime without exposing a single byte to the web.',
+        f2_t:'⚡ Prompt Vault',f2_p:'Reusable prompt library to inject parameters rapidly into Cursor/Windsurf execution plans.',
+        f3_t:'📡 Knowledge Base',f3_p:'Automatic indexing of architectural decisions and snippets into persistent Knowledge Items.',
+        f4_t:'🔗 IDE Sync (UNION)',f4_p:'Generates `.cursorrules`, `.windsurfrules`, and `CLAUDE.md` to sync your context implicitly on launch.',
+        f5_t:'🔑 API Manager',f5_p:'Stop hardcoding sensitive keys. Vault them locally and spawn them via Context automatically per project.',
+        f6_t:'🖥️ Server Monitor',f6_p:'Direct SSH checks for RAM and Docker containers to observe stability when multiple AIs deploy.',
+        f7_p:'Exposes local intelligence across your entire IDE ecosystem with the Model Context Protocol.',
+        f8_p:'Surgical tools to find Zombie processes mapping your ports, nuclear cache wipers, and raw system logs.',
+        f9_t:'🎯 Git Radar (Auto)',f9_p:'Let the AI autonomously document knowledge changes based on raw Git diff signals locally.',
+        tech_label:'ARCHITECTURE',tech_title:'Native Desktop<br>Technologies',tech_desc:'Modern stack, pure native offline binary. Electron + React 19 + AI.',
+        how_label:'WORKFLOW',how_title:'Context Synchronization',how_desc:'Install, launch Open Brain, and command any AI model without context limits.',
+        s1_t:'Install the DMG',s1_p:'Download the open-source native macOS arm64 package natively compiled.',
+        s2_t:'Auto-detection',s2_p:'The daemon reads your ~/.openbrain/ repository indexing KI artifacts seamlessly.',
+        s3_t:'Context Injection',s3_p:'Switch on UNION sync to channel environment variables into Claude Code or Aider.',
+        s4_t:'Local Inference',s4_p:'Chat entirely off-grid via the Neural Terminal invoking Ollama for safety checks.',
+        s5_t:'Absolute Privacy',s5_p:'Operate freely realizing telemetry has been purged. Code stays on the host system.',
+        cta_label:'DIRECT DOWNLOAD',cta_title:'Native macOS Deployment',cta_desc:'Offline self-contained installer mapped exclusively for Apple Silicon (M1/M2/M3).<br>No cloud web-accounts necessary to run the engines.',
+        cta_github:'VIEW SOURCE (GITHUB)',
+        cta_connect:'Get the Latest Release',cta_msg:'Download the official verified DMG installer executable. No background daemons outside of your direct workspace control.',cta_btn:'DOWNLOAD DMG (DRIVE)',
+        footer_p1:'100% OFF-GRID · Made for the autonomous development era',footer_link:'[ CMD ] OPEN_REPOSITORY',footer_p2:'The Neural OS for AI-First Development'
+      }
+    };
+    let currentLang = 'en';
+    function setLang(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      document.getElementById('langToggle').textContent = lang === 'en' ? 'ES' : 'EN';
+      const strings = i18n[lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (strings[key]) el.innerHTML = strings[key];
+      });
+    }
+    function toggleLang() { setLang(currentLang === 'en' ? 'es' : 'en'); }
+    // Default: English
+    setLang('en');
+  </script>
+</body>
+</html>

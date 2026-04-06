@@ -1,0 +1,3406 @@
+diff --git a/src/App.tsx b/src/App.tsx
+index 43291bc..f8b8d80 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,32 +1,30 @@
+ import logoBrain from "@/assets/logo-brain.png";
+ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+ import { motion, AnimatePresence } from "framer-motion";
+-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+-
+-import { Button } from "@/components/ui/button";
+-import { Input } from "@/components/ui/input";
+-import { Textarea } from "@/components/ui/textarea";
+-import { Badge } from "@/components/ui/badge";
+-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ import { Progress } from "@/components/ui/progress";
+ import { ScrollArea } from "@/components/ui/scroll-area";
+-import { Separator } from "@/components/ui/separator";
+ import {
+   Search, Play, ShieldCheck, FolderKanban, FileText, Wrench, Activity,
+-  Database, Clock3, AlertTriangle, CheckCircle2, Sparkles, Zap, ToggleLeft,
+-  ToggleRight, RefreshCw, ArrowRight, BookOpen, Copy, Rocket, Timer,
+-  Brain, Shield, Archive, ExternalLink, HardDrive, FileCode, Image, Film,
+-  Loader2, FolderOpen, Eye, Trash2, Code2, Info, Server, Container, Globe, Terminal,
+-  Plus, Pencil, X, Key, DollarSign
++  Database, Clock3, AlertTriangle, CheckCircle2, Zap, RefreshCw,
++  BookOpen, Copy, Rocket, Timer, Brain, Shield, Archive, ExternalLink,
++  HardDrive, FileCode, Image, Film, Loader2, FolderOpen, Eye, Trash2,
++  Code2, Info, Server, Container, Globe, Terminal, Plus, Pencil, X, Key,
++  DollarSign, ChevronRight, Layers, BarChart3, Cpu, Network
+ } from "lucide-react";
+-import type { Sesion, SaludSistema, ArchivoSalida, ArtefactoArchivo, KnowledgeItem, ResultadoIntegridad, ServerConfig, ApiConfig, MaintenanceInfo } from "@/types/antigravity";
+-
+-/* ════════════════════════════════════════════════════════════════════════
+-   DATOS ESTÁTICOS (prompts - gestión local)
+-   ════════════════════════════════════════════════════════════════════════ */
+-
++import type {
++  Sesion, SaludSistema, ArchivoSalida, ArtefactoArchivo, KnowledgeItem,
++  ResultadoIntegridad, ServerConfig, ApiConfig, MaintenanceInfo
++} from "@/types/antigravity";
++
++/* ══════════════════════════════════════════════════════════════
++   TIPOS
++══════════════════════════════════════════════════════════════ */
++type TabId = "sesiones" | "prompts" | "salidas" | "reparar" | "apis" | "servidores" | "conocimiento" | "info";
++
++/* ══════════════════════════════════════════════════════════════
++   PROMPTS ESTÁTICOS
++══════════════════════════════════════════════════════════════ */
+ function generarPrompts(servers: ServerConfig[], apis: ApiConfig[]) {
+-  // Build real context strings
+   const srvList = servers.map(s => `• ${s.nombre} (${s.ip}) — SSH: ${s.ssh}`).join('\n') || '• [sin servidores configurados]';
+   const srvOptions = servers.map(s => s.nombre).join(' / ') || '[servidor]';
+   const apiList = apis.map(a => `• ${a.nombre} (${a.tipo}) — Key: ${a.apiKey?.substring(0, 15)}...`).join('\n') || '• [sin APIs configuradas]';
+@@ -35,648 +33,285 @@ function generarPrompts(servers: ServerConfig[], apis: ApiConfig[]) {
+   const projOptions = proyectos.join(' / ') || '[proyecto]';
+ 
+   return [
+-  {
+-    nombre: "Tarea de código acotada",
+-    etiqueta: "Producción",
+-    contenido: `[CONTEXTO]
+-Proyecto: ${projOptions}
+-Servidores disponibles:
+-${srvList}
+-
+-[OBJETIVO]
+-Implementa SOLO el cambio solicitado. Sin refactors colaterales.
+-
+-[CAMBIO REQUERIDO]
+-[Describe qué debe cambiar]
+-
+-[ARCHIVOS AFECTADOS]
+-- [ruta/archivo.ts]
+-
+-[RESTRICCIONES]
+-- Preservar comportamiento existente
+-- No tocar archivos fuera del scope
+-- Mantener convenciones del proyecto
+-
+-[VALIDACIÓN]
+-Devuelve: código listo + comando de test + notas de riesgo.`,
+-  },
+-  {
+-    nombre: "Triaje de errores",
+-    etiqueta: "Debug",
+-    contenido: `[ERROR]
+-\`\`\`
+-[Pega aquí el error/stack trace]
+-\`\`\`
+-
+-[CONTEXTO]
+-- Proyecto: ${projOptions}
+-- Archivo: [ruta]
+-- Acción que lo provoca: [describe]
+-- ¿Reproducible? Sí/No
+-- Último cambio relevante: [qué se tocó]
+-
+-[INFRAESTRUCTURA]
+-${srvList}
+-
+-[OBJETIVO]
+-Causa raíz → parche mínimo → checklist de verificación.
+-
+-[RESTRICCIONES]
+-Sé explícito sobre incertidumbre. No cambies nada fuera del bug.`,
+-  },
+-  {
+-    nombre: "Deploy a producción",
+-    etiqueta: "DevOps",
+-    contenido: `[PROYECTO]
+-Nombre: ${projOptions}
+-
+-[SERVIDORES]
+-${srvList}
+-
+-[CAMBIOS A DEPLOYAR]
+-1. [cambio 1]
+-2. [cambio 2]
+-
+-[PROCESO]
+-1. Verificar que compila localmente
+-2. Ejecutar tests
+-3. SSH al servidor: [elegir de arriba]
+-4. Deploy: [./deploy_simple.sh | docker compose up -d --build]
+-5. Verificar en producción: [URL]
+-6. Rollback si falla: [git checkout | docker compose down]
+-
+-[POST-DEPLOY]
+-- Logs: journalctl -f -u [servicio] --since "5min ago"
+-- Docker: docker logs --tail 50 [container]
+-- PM2: pm2 logs --lines 20`,
+-  },
+-  {
+-    nombre: "SSH — Check servidor",
+-    etiqueta: "Infra",
+-    contenido: `[SERVIDORES DISPONIBLES]
+-${srvList}
+-
+-[SERVIDOR A CHECKEAR]
+-SSH: [elige uno de arriba]
+-
+-[CHECKS REQUERIDOS]
+-1. RAM/CPU: free -h && uptime && top -bn1 | head -5
+-2. Disco: df -h | grep -v tmpfs
+-3. Docker: docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'
+-4. PM2: pm2 list
+-5. Logs: journalctl --since "1 hour ago" --no-pager | tail -30
+-6. Puertos: ss -tlnp | grep LISTEN
+-
+-[REPORTAR]
+-- Estado general (OK / ⚠️ Warning / 🔴 Critical)
+-- Recursos >80% uso
+-- Containers/procesos caídos
+-- Disco lleno o por llenarse
+-- Recomendaciones de acción`,
+-  },
+-  {
+-    nombre: "Revisión de arquitectura",
+-    etiqueta: "Arquitectura",
+-    contenido: `[PROYECTO]
+-${projOptions}
+-
+-[PROYECTOS ACTIVOS]
+-${projList}
+-
+-[STACK ACTUAL]
+-[describe tecnologías]
+-
+-[APIs DISPONIBLES]
+-${apiList}
+-
+-[DECISIÓN A TOMAR]
+-[¿Qué evaluamos? ¿Migrar? ¿Escalar? ¿Nuevo servicio?]
+-
+-[CRITERIOS]
+-- Performance / escalabilidad
+-- Coste infraestructura mensual
+-- Complejidad mantenimiento
+-- Time-to-market
+-
+-[OUTPUT]
+-Pros/contras + recomendación + plan de migración + estimación de coste.`,
+-  },
+-  {
+-    nombre: "Integración de API",
+-    etiqueta: "APIs",
+-    contenido: `[APIs DISPONIBLES EN EL SISTEMA]
+-${apiList}
+-
+-[API A INTEGRAR]
+-Nombre: [elige de arriba o nueva]
+-Docs: [URL documentación]
+-
+-[ENDPOINTS]
+-- GET/POST [url] — [para qué]
+-
+-[IMPLEMENTACIÓN]
+-- Proyecto destino: ${projOptions}
+-- Archivo: [ruta]
+-- Manejo errores: retry con backoff exponencial
+-- Rate limits: [límites conocidos]
+-- Cache: [TTL si aplica]
+-
+-[TESTING]
+-1. curl de prueba con la key real
+-2. Integración en código
+-3. Test e2e en staging`,
+-  },
+-  {
+-    nombre: "Query / migración BD",
+-    etiqueta: "Database",
+-    contenido: `[BASE DE DATOS]
+-Proyecto: ${projOptions}
+-Tipo: [PostgreSQL / SQLite / MongoDB]
+-Servidor: ${srvOptions}
+-Conexión: [host:port/database]
+-
+-[OBJETIVO]
+-[Describe la query o migración]
+-
+-[SCHEMA RELEVANTE]
+-\`\`\`sql
+-[tablas/modelos afectados]
+-\`\`\`
+-
+-[SEGURIDAD]
+-- Backup ANTES de ejecutar: pg_dump / cp db.sqlite db.bak
+-- No borrar datos, marcar como deprecated
+-- Ejecutar en horario bajo tráfico (madrugada ES)
+-
+-[ROLLBACK]
+-\`\`\`sql
+-[SQL para revertir si falla]
+-\`\`\``,
+-  },
+-  {
+-    nombre: "Traspaso de sesión",
+-    etiqueta: "Handoff",
+-    contenido: `# Traspaso — ${new Date().toLocaleDateString('es-ES')}
+-Proyecto: ${projOptions}
+-
+-## Qué se hizo
+-1. [cambio 1]
+-2. [cambio 2]
+-
+-## Decisiones
+-- [decisión]: [razón]
+-
+-## Estado actual
+-- ✅ Funciona: [qué]
+-- ⏳ Pendiente: [qué]
+-- 🚫 Bloqueado: [si hay]
+-
+-## Infraestructura afectada
+-${srvList}
+-
+-## Próximos pasos
+-1. [prioridad 1]
+-2. [siguiente]
+-
+-## Prompt para la siguiente sesión
+-Usa este texto completo como primer mensaje en la nueva conversación para continuidad total.`,
+-  },
+-  {
+-    nombre: "🔴 Emergencia — servicio caído",
+-    etiqueta: "Urgente",
+-    contenido: `⚠️ SERVICIO CAÍDO — PRIORIDAD MÁXIMA
+-
+-[SERVICIO]
+-Proyecto: ${projOptions}
+-URL: [url del servicio]
+-
+-[SERVIDORES]
+-${srvList}
+-
+-[SÍNTOMAS]
+-- Qué falla: [describe]
+-- Desde cuándo: [hora]
+-- ¿Hubo cambios recientes? [sí/no — cuáles]
+-
+-[DIAGNÓSTICO RÁPIDO — ejecutar en orden]
+-1. ping [dominio]
+-2. curl -I https://[dominio]
+-3. SSH al servidor → docker ps && pm2 list
+-4. Logs: journalctl --since "30min ago" | grep -i error | tail -20
+-5. Disco: df -h (¿lleno?)
+-6. RAM: free -h (¿saturada?)
+-
+-[ACCIÓN]
+-PRIORIDAD ABSOLUTA: restaurar servicio. Investigar causa DESPUÉS.
+-- Docker restart: docker compose restart [servicio]
+-- PM2 restart: pm2 restart [proceso]
+-- Rollback: git checkout [commit_anterior] && [redeploy]`,
+-  },
+-  {
+-    nombre: "Setup nuevo proyecto",
+-    etiqueta: "Setup",
+-    contenido: `[PROYECTO NUEVO]
+-Nombre: [nombre]
+-Tipo: SaaS / API / Tool / Landing
+-
+-[STACK]
+-Front: Next.js / Vite + React
+-Back: Fastify / FastAPI / Express
+-BD: PostgreSQL / SQLite
+-Deploy: Docker Compose / PM2
+-
+-[SERVIDOR]
+-Usar existente: ${srvOptions}
+-O crear nuevo VPS
+-
+-[APIs A INTEGRAR]
+-${apiList}
+-
+-[MVP — Features mínimas]
+-1. [feature 1]
+-2. [feature 2]
+-3. [feature 3]
+-
+-[INFRA]
+-- Dominio: [nombre].com
+-- SSL: Caddy auto-TLS
+-- CI/CD: deploy_simple.sh
+-
+-[OUTPUT ESPERADO]
+-Scaffold completo + docker-compose.yml + deploy script + README.md + .env.example`,
+-  },
+-];
+-}
+-
+-
+-
+-/* ════════════════════════════════════════════════════════════════════════
+-   COMPONENTES AUXILIARES
+-   ════════════════════════════════════════════════════════════════════════ */
+-
+-function IndicadorEstado({ valor }: { valor: string }) {
+-  if (valor === "Saludable") return (
+-    <Badge className="rounded-full bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25">
+-      <span className="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 status-blink" />
+-      Saludable
+-    </Badge>
+-  );
+-  if (valor === "En riesgo") return (
+-    <Badge className="rounded-full bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25">
+-      <span className="w-2 h-2 rounded-full bg-amber-400 mr-1.5 status-blink" />
+-      En riesgo
+-    </Badge>
+-  );
+-  return (
+-    <Badge variant="outline" className="rounded-full text-slate-400 border-slate-600">
+-      <span className="w-2 h-2 rounded-full bg-slate-500 mr-1.5" />
+-      Archivado
+-    </Badge>
+-  );
+-}
+-
+-function IconoTipo({ tipo }: { tipo: string }) {
+-  switch (tipo) {
+-    case "documento": return <FileText className="w-4 h-4 text-violet-400" />;
+-    case "imagen": return <Image className="w-4 h-4 text-cyan-400" />;
+-    case "grabación": return <Film className="w-4 h-4 text-rose-400" />;
+-    case "datos": return <FileCode className="w-4 h-4 text-amber-400" />;
+-    default: return <FileText className="w-4 h-4 text-slate-400" />;
+-  }
+-}
+-
+-function BotonAutoMode({ activo, onChange }: { activo: boolean; onChange: (v: boolean) => void }) {
+-  return (
+-    <motion.button
+-      onClick={() => onChange(!activo)}
+-      whileTap={{ scale: 0.95 }}
+-      className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-300 ${
+-        activo
+-          ? "bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-300 border border-emerald-500/40 auto-pulse"
+-          : "bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-600"
+-      }`}
+-    >
+-      {activo ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+-      {activo ? "🚀 Autopilot" : "Autopilot: Off"}
+-    </motion.button>
+-  );
++    {
++      nombre: "Tarea de código acotada",
++      etiqueta: "Producción",
++      contenido: `[CONTEXTO]\nProyecto: ${projOptions}\nServidores disponibles:\n${srvList}\n\n[OBJETIVO]\nImplementa SOLO el cambio solicitado. Sin refactors colaterales.\n\n[CAMBIO REQUERIDO]\n[Describe qué debe cambiar]\n\n[ARCHIVOS AFECTADOS]\n- [ruta/archivo.ts]\n\n[RESTRICCIONES]\n- Preservar comportamiento existente\n- No tocar archivos fuera del scope\n- Mantener convenciones del proyecto\n\n[VALIDACIÓN]\nDevuelve: código listo + comando de test + notas de riesgo.`,
++    },
++    {
++      nombre: "Triaje de errores",
++      etiqueta: "Debug",
++      contenido: `[ERROR]\n\`\`\`\n[Pega aquí el error/stack trace]\n\`\`\`\n\n[CONTEXTO]\n- Proyecto: ${projOptions}\n- Archivo: [ruta]\n- Acción que lo provoca: [describe]\n- ¿Reproducible? Sí/No\n- Último cambio relevante: [qué se tocó]\n\n[INFRAESTRUCTURA]\n${srvList}\n\n[OBJETIVO]\nCausa raíz → parche mínimo → checklist de verificación.\n\n[RESTRICCIONES]\nSé explícito sobre incertidumbre. No cambies nada fuera del bug.`,
++    },
++    {
++      nombre: "Deploy a producción",
++      etiqueta: "DevOps",
++      contenido: `[PROYECTO]\nNombre: ${projOptions}\n\n[SERVIDORES]\n${srvList}\n\n[CAMBIOS A DEPLOYAR]\n1. [cambio 1]\n2. [cambio 2]\n\n[PROCESO]\n1. Verificar que compila localmente\n2. Ejecutar tests\n3. SSH al servidor: [elegir de arriba]\n4. Deploy: [./deploy_simple.sh | docker compose up -d --build]\n5. Verificar en producción: [URL]\n6. Rollback si falla: [git checkout | docker compose down]\n\n[POST-DEPLOY]\n- Logs: journalctl -f -u [servicio] --since "5min ago"\n- Docker: docker logs --tail 50 [container]\n- PM2: pm2 logs --lines 20`,
++    },
++    {
++      nombre: "SSH — Check servidor",
++      etiqueta: "Infra",
++      contenido: `[SERVIDORES DISPONIBLES]\n${srvList}\n\n[SERVIDOR A CHECKEAR]\nSSH: [elige uno de arriba]\n\n[CHECKS REQUERIDOS]\n1. RAM/CPU: free -h && uptime && top -bn1 | head -5\n2. Disco: df -h | grep -v tmpfs\n3. Docker: docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'\n4. PM2: pm2 list\n5. Logs: journalctl --since "1 hour ago" --no-pager | tail -30\n6. Puertos: ss -tlnp | grep LISTEN\n\n[REPORTAR]\n- Estado general (OK / Warning / Critical)\n- Recursos >80% uso\n- Containers/procesos caídos\n- Disco lleno o por llenarse\n- Recomendaciones de acción`,
++    },
++    {
++      nombre: "Revisión de arquitectura",
++      etiqueta: "Arquitectura",
++      contenido: `[PROYECTO]\n${projOptions}\n\n[PROYECTOS ACTIVOS]\n${projList}\n\n[STACK ACTUAL]\n[describe tecnologías]\n\n[APIs DISPONIBLES]\n${apiList}\n\n[DECISIÓN A TOMAR]\n[¿Qué evaluamos? ¿Migrar? ¿Escalar? ¿Nuevo servicio?]\n\n[CRITERIOS]\n- Performance / escalabilidad\n- Coste infraestructura mensual\n- Complejidad mantenimiento\n- Time-to-market\n\n[OUTPUT]\nPros/contras + recomendación + plan de migración + estimación de coste.`,
++    },
++    {
++      nombre: "Integración de API",
++      etiqueta: "APIs",
++      contenido: `[APIs DISPONIBLES EN EL SISTEMA]\n${apiList}\n\n[API A INTEGRAR]\nNombre: [elige de arriba o nueva]\nDocs: [URL documentación]\n\n[ENDPOINTS]\n- GET/POST [url] — [para qué]\n\n[IMPLEMENTACIÓN]\n- Proyecto destino: ${projOptions}\n- Archivo: [ruta]\n- Manejo errores: retry con backoff exponencial\n- Rate limits: [límites conocidos]\n- Cache: [TTL si aplica]\n\n[TESTING]\n1. curl de prueba con la key real\n2. Integración en código\n3. Test e2e en staging`,
++    },
++    {
++      nombre: "Query / migración BD",
++      etiqueta: "Database",
++      contenido: `[BASE DE DATOS]\nProyecto: ${projOptions}\nTipo: [PostgreSQL / SQLite / MongoDB]\nServidor: ${srvOptions}\nConexión: [host:port/database]\n\n[OBJETIVO]\n[Describe la query o migración]\n\n[SCHEMA RELEVANTE]\n\`\`\`sql\n[tablas/modelos afectados]\n\`\`\`\n\n[SEGURIDAD]\n- Backup ANTES de ejecutar: pg_dump / cp db.sqlite db.bak\n- No borrar datos, marcar como deprecated\n- Ejecutar en horario bajo tráfico (madrugada ES)\n\n[ROLLBACK]\n\`\`\`sql\n[SQL para revertir si falla]\n\`\`\``,
++    },
++    {
++      nombre: "Traspaso de sesión",
++      etiqueta: "Handoff",
++      contenido: `# Traspaso — ${new Date().toLocaleDateString('es-ES')}\nProyecto: ${projOptions}\n\n## Qué se hizo\n1. [cambio 1]\n2. [cambio 2]\n\n## Decisiones\n- [decisión]: [razón]\n\n## Estado actual\n- OK Funciona: [qué]\n- Pendiente: [qué]\n- Bloqueado: [si hay]\n\n## Infraestructura afectada\n${srvList}\n\n## Próximos pasos\n1. [prioridad 1]\n2. [siguiente]\n\n## Prompt para la siguiente sesión\nUsa este texto completo como primer mensaje en la nueva conversación para continuidad total.`,
++    },
++    {
++      nombre: "Emergencia — servicio caído",
++      etiqueta: "Urgente",
++      contenido: `SERVICIO CAIDO — PRIORIDAD MAXIMA\n\n[SERVICIO]\nProyecto: ${projOptions}\nURL: [url del servicio]\n\n[SERVIDORES]\n${srvList}\n\n[SINTOMAS]\n- Qué falla: [describe]\n- Desde cuándo: [hora]\n- ¿Hubo cambios recientes? [sí/no — cuáles]\n\n[DIAGNÓSTICO RÁPIDO — ejecutar en orden]\n1. ping [dominio]\n2. curl -I https://[dominio]\n3. SSH al servidor → docker ps && pm2 list\n4. Logs: journalctl --since "30min ago" | grep -i error | tail -20\n5. Disco: df -h (¿lleno?)\n6. RAM: free -h (¿saturada?)\n\n[ACCIÓN]\nPRIORIDAD ABSOLUTA: restaurar servicio. Investigar causa DESPUÉS.\n- Docker restart: docker compose restart [servicio]\n- PM2 restart: pm2 restart [proceso]\n- Rollback: git checkout [commit_anterior] && [redeploy]`,
++    },
++    {
++      nombre: "Setup nuevo proyecto",
++      etiqueta: "Setup",
++      contenido: `[PROYECTO NUEVO]\nNombre: [nombre]\nTipo: SaaS / API / Tool / Landing\n\n[STACK]\nFront: Next.js / Vite + React\nBack: Fastify / FastAPI / Express\nBD: PostgreSQL / SQLite\nDeploy: Docker Compose / PM2\n\n[SERVIDOR]\nUsar existente: ${srvOptions}\nO crear nuevo VPS\n\n[APIs A INTEGRAR]\n${apiList}\n\n[MVP — Features mínimas]\n1. [feature 1]\n2. [feature 2]\n3. [feature 3]\n\n[INFRA]\n- Dominio: [nombre].com\n- SSL: Caddy auto-TLS\n- CI/CD: deploy_simple.sh\n\n[OUTPUT ESPERADO]\nScaffold completo + docker-compose.yml + deploy script + README.md + .env.example`,
++    },
++  ];
+ }
+ 
++/* ══════════════════════════════════════════════════════════════
++   HELPERS
++══════════════════════════════════════════════════════════════ */
+ function tiempoRelativo(fechaISO: string | null): string {
+-  if (!fechaISO) return "desconocido";
++  if (!fechaISO) return "—";
+   const diff = Date.now() - new Date(fechaISO).getTime();
+   const mins = Math.floor(diff / 60000);
+-  if (mins < 1) return "ahora mismo";
+-  if (mins < 60) return `hace ${mins} min`;
++  if (mins < 1) return "ahora";
++  if (mins < 60) return `${mins}m`;
+   const hours = Math.floor(mins / 60);
+-  if (hours < 24) return `hace ${hours}h`;
++  if (hours < 24) return `${hours}h`;
+   const days = Math.floor(hours / 24);
+-  return `hace ${days}d`;
++  return `${days}d`;
+ }
+ 
+-/* ════════════════════════════════════════════════════════════════════════
+-   HOOK: DETECTAR SI ESTAMOS EN ELECTRON O EN BROWSER
+-   ════════════════════════════════════════════════════════════════════════ */
++function formatTokens(n: number) {
++  if (n > 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
++  if (n > 1_000) return `${(n / 1_000).toFixed(0)}K`;
++  return `${n}`;
++}
++
++function formatBytes(b: number) {
++  if (b > 1_000_000) return `${(b / 1_000_000).toFixed(1)} MB`;
++  if (b > 1_000) return `${(b / 1_000).toFixed(0)} KB`;
++  return `${b} B`;
++}
+ 
+ function useIsElectron() {
+   return typeof window !== "undefined" && !!window.antigravity;
+ }
+ 
+-/* ════════════════════════════════════════════════════════════════════════
+-   APP PRINCIPAL
+-   ════════════════════════════════════════════════════════════════════════ */
++const animFade = {
++  initial: { opacity: 0, y: 8 },
++  animate: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] as [number,number,number,number] } },
++  exit: { opacity: 0, y: -4, transition: { duration: 0.15 } },
++};
++
++const staggerContainer = {
++  animate: { transition: { staggerChildren: 0.04 } },
++};
++
++const staggerItem = {
++  initial: { opacity: 0, x: -8 },
++  animate: { opacity: 1, x: 0, transition: { duration: 0.2, ease: [0.22,1,0.36,1] as [number,number,number,number] } },
++};
++
++/* ══════════════════════════════════════════════════════════════
++   NAV CONFIG
++══════════════════════════════════════════════════════════════ */
++const NAV: { id: TabId; label: string; icon: React.FC<{ className?: string }>; color?: string }[] = [
++  { id: "sesiones",    label: "Sesiones",     icon: Play,       color: "text-emerald-400" },
++  { id: "prompts",     label: "Prompts",      icon: FolderKanban, color: "text-cyan-400" },
++  { id: "salidas",     label: "Salidas",      icon: Database,   color: "text-violet-400" },
++  { id: "reparar",     label: "Reparar",      icon: Wrench,     color: "text-amber-400" },
++  { id: "apis",        label: "APIs",         icon: Key,        color: "text-amber-300" },
++  { id: "servidores",  label: "Servidores",   icon: Server,     color: "text-cyan-400" },
++  { id: "conocimiento",label: "Conocimiento", icon: Brain,      color: "text-rose-400" },
++  { id: "info",        label: "Info",         icon: Info,       color: "text-slate-400" },
++];
+ 
++/* ══════════════════════════════════════════════════════════════
++   APP
++══════════════════════════════════════════════════════════════ */
+ export default function App() {
+   const isElectron = useIsElectron();
+ 
+-  // Datos reales de Antigravity
+-  const [sesiones, setSesiones] = useState<Sesion[]>([]);
+-  const [salud, setSalud] = useState<SaludSistema | null>(null);
++  /* ── State: datos ── */
++  const [sesiones, setSesiones]           = useState<Sesion[]>([]);
++  const [salud, setSalud]                 = useState<SaludSistema | null>(null);
+   const [archivosSalida, setArchivosSalida] = useState<ArchivoSalida[]>([]);
+   const [artefactoSeleccionado, setArtefactoSeleccionado] = useState<string | null>(null);
+-  const [contenidoArtefacto, setContenidoArtefacto] = useState<string>("");
+-  const [sesionSeleccionada, setSesionSeleccionada] = useState<Sesion | null>(null);
+-  const [artefactosSesion, setArtefactosSesion] = useState<ArtefactoArchivo[]>([]);
+-  const [respaldando, setRespaldando] = useState(false);
+-  const [mensajeRespaldo, setMensajeRespaldo] = useState<string | null>(null);
+-  const [limpiando, setLimpiando] = useState(false);
+-  const [mensajeLimpieza, setMensajeLimpieza] = useState<string | null>(null);
+-  const [verificando, setVerificando] = useState(false);
+-  const [resultadoIntegridad, setResultadoIntegridad] = useState<ResultadoIntegridad | null>(null);
+-  const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
+-  const [mensajeApertura, setMensajeApertura] = useState<string | null>(null);
++  const [contenidoArtefacto, setContenidoArtefacto]       = useState<string>("");
++  const [sesionSeleccionada, setSesionSeleccionada]       = useState<Sesion | null>(null);
++  const [artefactosSesion, setArtefactosSesion]           = useState<ArtefactoArchivo[]>([]);
++  const [knowledgeItems, setKnowledgeItems]               = useState<KnowledgeItem[]>([]);
++  const [servers, setServers]             = useState<ServerConfig[]>([]);
++  const [apis, setApis]                   = useState<ApiConfig[]>([]);
++  const [mantenimiento, setMantenimiento] = useState<MaintenanceInfo | null>(null);
++  const [resultadoIntegridad, setResultadoIntegridad]     = useState<ResultadoIntegridad | null>(null);
++
++  /* ── State: UI ── */
++  const [activeTab, setActiveTab]         = useState<TabId>("sesiones");
++  const [modoAuto, setModoAuto]           = useState(true);
++  const [logsAuto, setLogsAuto]           = useState<string[]>([]);
++  const [busqueda, setBusqueda]           = useState("");
++  const logEndRef                         = useRef<HTMLDivElement>(null);
++
++  /* ── State: acciones ── */
++  const [respaldando, setRespaldando]     = useState(false);
++  const [limpiando, setLimpiando]         = useState(false);
++  const [verificando, setVerificando]     = useState(false);
++  const [limpiandoExtensiones, setLimpiandoExtensiones] = useState(false);
++  const [limpiandoCache, setLimpiandoCache] = useState(false);
++  const [mensajeFeedback, setMensajeFeedback] = useState<{tipo:"ok"|"err"|"warn"; msg:string}|null>(null);
++  const [checkingServer, setCheckingServer] = useState<string | null>(null);
++  const [serverStatus, setServerStatus]   = useState<Record<string, { ok: boolean; msg: string }>>({});
++  const [serverAutoStatus, setServerAutoStatus] = useState<Record<string, { ok: boolean; lastCheck: string; ram: string; nombre: string }>>({});
+ 
+-  // Servidores
+-  const [servers, setServers] = useState<ServerConfig[]>([]);
++  /* ── State: formularios ── */
+   const [showServerForm, setShowServerForm] = useState(false);
+-  const [editingServer, setEditingServer] = useState<ServerConfig | null>(null);
+-  const [serverForm, setServerForm] = useState<ServerConfig>({
++  const [editingServer, setEditingServer]   = useState<ServerConfig | null>(null);
++  const [serverForm, setServerForm]         = useState<ServerConfig>({
+     id: '', nombre: '', ip: '', proveedor: '', os: 'Ubuntu 24.04', ram: '',
+     color: 'emerald', ssh: '', proyectos: [], containers: [], notas: [],
+   });
+   const [newProjectInput, setNewProjectInput] = useState({ nombre: '', desc: '', color: 'text-cyan-400' });
+-  const [newNoteInput, setNewNoteInput] = useState('');
++  const [newNoteInput, setNewNoteInput]       = useState('');
+   const [confirmDeleteServer, setConfirmDeleteServer] = useState<string | null>(null);
+-  const [checkingServer, setCheckingServer] = useState<string | null>(null);
+-  const [serverStatus, setServerStatus] = useState<Record<string, { ok: boolean; msg: string }>>({});
+ 
+-  // APIs
+-  const [apis, setApis] = useState<ApiConfig[]>([]);
+-  const [showApiForm, setShowApiForm] = useState(false);
+-  const [editingApi, setEditingApi] = useState<ApiConfig | null>(null);
+-  const [apiForm, setApiForm] = useState<ApiConfig>({
++  const [showApiForm, setShowApiForm]     = useState(false);
++  const [editingApi, setEditingApi]       = useState<ApiConfig | null>(null);
++  const [apiForm, setApiForm]             = useState<ApiConfig>({
+     id: '', nombre: '', tipo: '', apiKey: '', saldo: 0, limiteAlerta: 10,
+     color: 'cyan', proyectos: [], notas: [], url: '',
+   });
+   const [confirmDeleteApi, setConfirmDeleteApi] = useState<string | null>(null);
+-
+-  // Mantenimiento profundo
+-  const [mantenimiento, setMantenimiento] = useState<MaintenanceInfo | null>(null);
+-  const [limpiandoExtensiones, setLimpiandoExtensiones] = useState(false);
+-  const [limpiandoCache, setLimpiandoCache] = useState(false);
+-  const [mensajeMantenimiento, setMensajeMantenimiento] = useState<string | null>(null);
+   const [newApiProject, setNewApiProject] = useState({ proyecto: '', consumoMensual: 0 });
+ 
+-  // UI state
+-  const [busqueda, setBusqueda] = useState("");
+-  const bibliotecaPrompts = useMemo(() => generarPrompts(servers, apis), [servers, apis]);
+-  const [promptActivo, setPromptActivo] = useState<{nombre: string; etiqueta: string; contenido: string}>({
+-    nombre: 'Cargando...', etiqueta: '', contenido: 'Los prompts se generarán con contexto real cuando carguen los servidores y APIs.'
+-  });
+-  const [modoAuto, setModoAuto] = useState(true); // Autopilot ON por defecto
+-  const [logsAuto, setLogsAuto] = useState<string[]>([]);
+-  const logEndRef = useRef<HTMLDivElement>(null);
+-
+-  // Server auto-check statuses
+-  const [serverAutoStatus, setServerAutoStatus] = useState<Record<string, { ok: boolean; lastCheck: string; ram: string; nombre: string }>>({});
++  /* ── State: KI creator ── */
++  const [kiTitulo, setKiTitulo]           = useState('');
++  const [kiResumen, setKiResumen]         = useState('');
++  const [kiContenido, setKiContenido]     = useState('');
+ 
+-  // Cmd+K spotlight
++  /* ── State: Spotlight ── */
+   const [showSpotlight, setShowSpotlight] = useState(false);
+-  const [spotlightQuery, setSpotlightQuery] = useState("");
++  const [spotlightQuery, setSpotlightQuery] = useState('');
+   const spotlightRef = useRef<HTMLInputElement>(null);
+ 
+-  // Active tab ref for keyboard shortcuts
+-  const [activeTab, setActiveTab] = useState("sesiones");
++  /* ── State: prompts ── */
++  const bibliotecaPrompts = useMemo(() => generarPrompts(servers, apis), [servers, apis]);
++  const [promptActivo, setPromptActivo]   = useState(bibliotecaPrompts[0]);
+ 
+-  // eslint-disable-next-line react-hooks/exhaustive-deps
+-  useEffect(() => { if (bibliotecaPrompts.length > 0 && promptActivo.nombre === 'Cargando...') setPromptActivo(bibliotecaPrompts[0]); }, [bibliotecaPrompts.length]);
++  /* ── Feedback helper ── */
++  const feedback = useCallback((tipo: "ok"|"err"|"warn", msg: string, ms = 4000) => {
++    setMensajeFeedback({ tipo, msg });
++    setTimeout(() => setMensajeFeedback(null), ms);
++  }, []);
+ 
+-  // Cargar datos reales al iniciar
++  /* ── Carga inicial ── */
+   useEffect(() => {
+     if (!isElectron) return;
+-
+-    async function cargarDatos() {
++    const load = async () => {
+       try {
+         const [sess, health, outputs] = await Promise.all([
+           window.antigravity.getSessions(),
+           window.antigravity.getSystemHealth(),
+           window.antigravity.getAllOutputs(),
+         ]);
+-        setSesiones(sess);
+-        setSalud(health);
+-        setArchivosSalida(outputs);
+-      } catch (err) {
+-        console.error("Error cargando datos de Antigravity:", err);
+-      }
+-
+-      // Cargar knowledge por separado (no bloquea la UI)
+-      try {
+-        const knowledge = await window.antigravity.getKnowledge();
+-        setKnowledgeItems(knowledge);
+-      } catch (err) {
+-        console.error("Error cargando knowledge:", err);
+-      }
+-
+-      // Cargar servidores
+-      try {
+-        const srvs = await window.antigravity.getServers();
+-        setServers(srvs);
+-      } catch (err) {
+-        console.error("Error cargando servidores:", err);
+-      }
+-
+-      // Cargar APIs
+-      try {
+-        const apiData = await window.antigravity.getApis();
+-        setApis(apiData);
+-      } catch (err) {
+-        console.error("Error cargando APIs:", err);
+-      }
+-
+-      // Cargar info de mantenimiento
+-      try {
+-        const maint = await window.antigravity.getMaintenanceInfo();
+-        setMantenimiento(maint);
+-      } catch (err) {
+-        console.error("Error cargando mantenimiento:", err);
+-      }
+-    }
++        setSesiones(sess); setSalud(health); setArchivosSalida(outputs);
++      } catch {}
++      try { setKnowledgeItems(await window.antigravity.getKnowledge()); } catch {}
++      try { setServers(await window.antigravity.getServers()); } catch {}
++      try { setApis(await window.antigravity.getApis()); } catch {}
++      try { setMantenimiento(await window.antigravity.getMaintenanceInfo()); } catch {}
++    };
++    load();
++  }, [isElectron]);
+ 
+-    cargarDatos();
++  /* ── Server auto-status ── */
++  useEffect(() => {
++    if (!isElectron) return;
++    window.antigravity.getServerStatuses?.().then(setServerAutoStatus).catch(() => {});
++    const cleanup = window.antigravity.onServerStatuses?.(setServerAutoStatus);
++    return cleanup;
+   }, [isElectron]);
+ 
+-  // AUTOPILOT: monitorizar + actuar automáticamente
++  /* ── Autopilot ── */
+   useEffect(() => {
+     if (!modoAuto || !isElectron) return;
+-
+-    const addLog = (msg: string) => {
+-      setLogsAuto(prev => [...prev, `[${new Date().toLocaleTimeString("es-ES")}] ${msg}`]);
+-    };
+-
+-    addLog("🚀 AUTOPILOT ACTIVADO — Monitorización + acciones correctivas");
+-
+-    // Ejecutar ciclo inmediato + cada 30s
+-    const runCycle = async () => {
+-      addLog("🔍 Escaneando sesiones activas...");
+-
++    const addLog = (msg: string) => setLogsAuto(prev => [...prev.slice(-200), `[${new Date().toLocaleTimeString("es-ES")}] ${msg}`]);
++    addLog("AUTOPILOT ACTIVO — Monitorizacion y acciones correctivas");
++    const run = async () => {
++      addLog("Escaneando sesiones...");
+       try {
+         const [sess, health, outputs] = await Promise.all([
+           window.antigravity.getSessions(),
+           window.antigravity.getSystemHealth(),
+           window.antigravity.getAllOutputs(),
+         ]);
+-        setSesiones(sess);
+-        setSalud(health);
+-        setArchivosSalida(outputs);
+-
++        setSesiones(sess); setSalud(health); setArchivosSalida(outputs);
+         const enRiesgo = sess.filter(s => s.estado === "En riesgo");
+-        const saludables = sess.filter(s => s.estado === "Saludable");
+-        addLog(`✅ ${saludables.length} saludables, ${enRiesgo.length} en riesgo`);
+-
+-        if (enRiesgo.length > 0) {
+-          for (const s of enRiesgo) {
+-            addLog(`⚠️ ${s.titulo.substring(0, 40)}… → ${s.tamañoPBFormateado} (riesgo)`);
+-          }
+-        }
+-
+-        // 🤖 ACCIÓN AUTOMÁTICA: Limpiar .resolved si hay muchos
++        addLog(`${sess.length - enRiesgo.length} saludables, ${enRiesgo.length} en riesgo`);
+         if (health.totalResolved > 5) {
+-          addLog(`🧹 Detectados ${health.totalResolved} archivos .resolved — limpiando automáticamente...`);
+-          try {
+-            const cleanResult = await window.antigravity.cleanResolved();
+-            addLog(`🧹 ${cleanResult.mensaje}`);
+-          } catch (e) {
+-            addLog(`❌ Error limpiando resolved: ${e}`);
+-          }
++          const r = await window.antigravity.cleanResolved();
++          addLog(`Limpieza: ${r.mensaje}`);
+         }
+-
+-        // 🤖 ACCIÓN AUTOMÁTICA: Verificar integridad
+-        try {
+-          const integrity = await window.antigravity.verifyIntegrity();
+-          setResultadoIntegridad(integrity);
+-          if (integrity.estadisticas?.problemas > 0) {
+-            addLog(`🔧 Integridad: ${integrity.estadisticas.problemas} problema(s) detectado(s)`);
+-            if (integrity.archivosCorruptos.length > 0) addLog(`  💀 ${integrity.archivosCorruptos.length} archivo(s) corrupto(s)`);
+-            if (integrity.artefactosSinMetadata.length > 0) addLog(`  📎 ${integrity.artefactosSinMetadata.length} artefacto(s) sin metadata`);
+-          } else {
+-            addLog(`✅ Integridad verificada: sin problemas`);
+-          }
+-        } catch (e) {
+-          addLog(`❌ Error verificando integridad: ${e}`);
+-        }
+-
+-        // 🤖 AUTO-SYNC DE PROYECTOS: crear/actualizar KIs por proyecto automáticamente
+-        try {
+-          addLog(`🧠 Sincronizando KIs de proyecto...`);
+-          const syncResult = await window.antigravity.autoSyncProjects();
+-          if (syncResult.exito) {
+-            addLog(syncResult.mensaje);
+-            if (syncResult.log.length > 0) {
+-              syncResult.log.forEach((l: string) => addLog(`  ${l}`));
+-            }
+-          } else {
+-            addLog(`⚠️ Auto-sync: ${syncResult.mensaje}`);
+-          }
+-          // Recargar knowledge actualizado
+-          const ki = await window.antigravity.getKnowledge();
+-          setKnowledgeItems(ki);
+-        } catch (e) {
+-          addLog(`❌ Error en auto-sync proyectos: ${e}`);
+-        }
+-
+-        addLog(`📊 ${health.tamañoTotal} en disco · ${health.totalConversaciones} conv · ${health.totalArtefactos} artefactos`);
+-        addLog(`🛡️ Seguridad: ${health.seguridadSesiones}% · Riesgo: ${health.riesgoContexto}%`);
+-        addLog("✅ Ciclo autopilot completado — próxima en 30s");
+-      } catch (err) {
+-        addLog(`❌ Error: ${err}`);
+-      }
++        const integrity = await window.antigravity.verifyIntegrity();
++        setResultadoIntegridad(integrity);
++        addLog(`Integridad: ${(integrity.estadisticas?.problemas ?? 0) === 0 ? "OK" : integrity.estadisticas?.problemas + " problema(s)"}`);
++        const sync = await window.antigravity.autoSyncProjects();
++        addLog(`Sync KIs: ${sync.mensaje}`);
++        setKnowledgeItems(await window.antigravity.getKnowledge());
++        addLog(`${health.tamañoTotal} en disco · ${health.totalConversaciones} conv · ${health.totalArtefactos} artefactos`);
++        addLog("Ciclo completado — siguiente en 30s");
++      } catch (e) { addLog(`ERROR: ${e}`); }
+     };
+-
+-    runCycle();
+-    const interval = setInterval(runCycle, 30000);
+-    return () => clearInterval(interval);
++    run();
++    const iv = setInterval(run, 30000);
++    return () => clearInterval(iv);
+   }, [modoAuto, isElectron]);
+ 
+-  // Auto-scroll logs
+-  useEffect(() => {
+-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+-  }, [logsAuto]);
+-
+-  // Load server auto-check statuses + listen for updates
+-  useEffect(() => {
+-    if (!isElectron) return;
+-    window.antigravity.getServerStatuses().then(setServerAutoStatus).catch(() => {});
+-    const cleanup = window.antigravity.onServerStatuses(setServerAutoStatus);
+-    return cleanup;
+-  }, [isElectron]);
+-
+-  // ═══════════ KEYBOARD SHORTCUTS ═══════════
+-  const tabIds = useMemo(() => ["sesiones", "prompts", "salidas", "reparar", "apis", "servidores", "conocimiento", "info"], []);
++  useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [logsAuto]);
+ 
++  /* ── Refresh all ── */
+   const refreshAll = useCallback(async () => {
+     if (!isElectron) return;
+     try {
+       const [sess, health, outputs, ki, srvs, apiData] = await Promise.all([
+-        window.antigravity.getSessions(),
+-        window.antigravity.getSystemHealth(),
+-        window.antigravity.getAllOutputs(),
+-        window.antigravity.getKnowledge(),
+-        window.antigravity.getServers(),
+-        window.antigravity.getApis(),
++        window.antigravity.getSessions(), window.antigravity.getSystemHealth(),
++        window.antigravity.getAllOutputs(), window.antigravity.getKnowledge(),
++        window.antigravity.getServers(), window.antigravity.getApis(),
+       ]);
+       setSesiones(sess); setSalud(health); setArchivosSalida(outputs);
+       setKnowledgeItems(ki); setServers(srvs); setApis(apiData);
+-    } catch (e) { console.error('Refresh error:', e); }
++    } catch {}
+   }, [isElectron]);
+ 
++  /* ── Keyboard shortcuts ── */
++  const tabIds: TabId[] = ["sesiones", "prompts", "salidas", "reparar", "apis", "servidores", "conocimiento", "info"];
+   useEffect(() => {
+-    const handleKeyDown = (e: KeyboardEvent) => {
+-      const isMeta = e.metaKey || e.ctrlKey;
+-
+-      // Cmd+K — spotlight
+-      if (isMeta && e.key === 'k') {
+-        e.preventDefault();
+-        setShowSpotlight(prev => !prev);
+-        setSpotlightQuery("");
+-        return;
+-      }
+-
+-      // Cmd+R — refresh
+-      if (isMeta && e.key === 'r' && !e.shiftKey) {
+-        e.preventDefault();
+-        refreshAll();
+-        return;
+-      }
+-
+-      // Cmd+B — backup
+-      if (isMeta && e.key === 'b') {
+-        e.preventDefault();
+-        // Handled inline to avoid hoisting issues
+-        if (window.antigravity) {
+-          window.antigravity.createBackup().catch(console.error);
+-        }
+-        return;
+-      }
+-
+-      // Cmd+1..8 — switch tabs
+-      if (isMeta && e.key >= '1' && e.key <= '8') {
+-        e.preventDefault();
+-        const idx = parseInt(e.key) - 1;
+-        if (idx < tabIds.length) setActiveTab(tabIds[idx]);
+-        return;
+-      }
+-
+-      // Esc — close panels
++    const onKey = (e: KeyboardEvent) => {
++      const meta = e.metaKey || e.ctrlKey;
++      if (meta && e.key === 'k') { e.preventDefault(); setShowSpotlight(p => !p); setSpotlightQuery(''); }
++      if (meta && e.key === 'r' && !e.shiftKey) { e.preventDefault(); refreshAll(); }
++      if (meta && e.key === 'b') { e.preventDefault(); window.antigravity?.createBackup().catch(() => {}); }
++      if (meta && e.key >= '1' && e.key <= '8') { e.preventDefault(); setActiveTab(tabIds[+e.key - 1]); }
+       if (e.key === 'Escape') {
+         if (showSpotlight) { setShowSpotlight(false); return; }
+         if (showServerForm) { setShowServerForm(false); return; }
+@@ -684,2027 +319,523 @@ export default function App() {
+         if (sesionSeleccionada) { setSesionSeleccionada(null); return; }
+       }
+     };
+-
+-    window.addEventListener('keydown', handleKeyDown);
+-    return () => window.removeEventListener('keydown', handleKeyDown);
++    window.addEventListener('keydown', onKey);
++    return () => window.removeEventListener('keydown', onKey);
+   }, [tabIds, refreshAll, showSpotlight, showServerForm, showApiForm, sesionSeleccionada]);
+ 
+-  // Focus spotlight input when shown
+-  useEffect(() => {
+-    if (showSpotlight) setTimeout(() => spotlightRef.current?.focus(), 100);
+-  }, [showSpotlight]);
++  useEffect(() => { if (showSpotlight) setTimeout(() => spotlightRef.current?.focus(), 80); }, [showSpotlight]);
+ 
+-  // Spotlight search results
++  /* ── Spotlight results ── */
+   const spotlightResults = useMemo(() => {
+     if (!spotlightQuery.trim()) return [];
+     const q = spotlightQuery.toLowerCase();
+-    const results: { tipo: string; nombre: string; tab: string; id?: string }[] = [];
+-
+-    // Sessions
+-    for (const s of sesiones) {
+-      if (s.titulo.toLowerCase().includes(q)) {
+-        results.push({ tipo: 'Sesión', nombre: s.titulo, tab: 'sesiones', id: s.id });
+-      }
+-    }
+-    // KIs
+-    for (const ki of knowledgeItems) {
+-      if (ki.titulo.toLowerCase().includes(q) || ki.resumen.toLowerCase().includes(q)) {
+-        results.push({ tipo: 'Conocimiento', nombre: ki.titulo, tab: 'conocimiento', id: ki.id });
+-      }
+-    }
+-    // Servers
+-    for (const s of servers) {
+-      if (s.nombre.toLowerCase().includes(q) || s.ip.includes(q)) {
+-        results.push({ tipo: 'Servidor', nombre: `${s.nombre} (${s.ip})`, tab: 'servidores', id: s.id });
+-      }
+-    }
+-    // APIs
+-    for (const a of apis) {
+-      if (a.nombre.toLowerCase().includes(q) || a.tipo.toLowerCase().includes(q)) {
+-        results.push({ tipo: 'API', nombre: a.nombre, tab: 'apis', id: a.id });
+-      }
+-    }
+-    // Prompts
+-    for (const p of bibliotecaPrompts) {
+-      if (p.nombre.toLowerCase().includes(q)) {
+-        results.push({ tipo: 'Prompt', nombre: p.nombre, tab: 'prompts' });
+-      }
+-    }
+-    return results.slice(0, 10);
++    const r: { tipo: string; nombre: string; tab: TabId }[] = [];
++    sesiones.forEach(s => s.titulo.toLowerCase().includes(q) && r.push({ tipo: 'Sesión', nombre: s.titulo, tab: 'sesiones' }));
++    knowledgeItems.forEach(k => (k.titulo.toLowerCase().includes(q) || k.resumen.toLowerCase().includes(q)) && r.push({ tipo: 'KI', nombre: k.titulo, tab: 'conocimiento' }));
++    servers.forEach(s => (s.nombre.toLowerCase().includes(q) || s.ip.includes(q)) && r.push({ tipo: 'Servidor', nombre: `${s.nombre} (${s.ip})`, tab: 'servidores' }));
++    apis.forEach(a => (a.nombre.toLowerCase().includes(q)) && r.push({ tipo: 'API', nombre: a.nombre, tab: 'apis' }));
++    bibliotecaPrompts.forEach(p => p.nombre.toLowerCase().includes(q) && r.push({ tipo: 'Prompt', nombre: p.nombre, tab: 'prompts' }));
++    return r.slice(0, 8);
+   }, [spotlightQuery, sesiones, knowledgeItems, servers, apis, bibliotecaPrompts]);
+ 
+-  // Seleccionar sesión y cargar artefactos
+-  const seleccionarSesion = async (sesion: Sesion) => {
+-    setSesionSeleccionada(sesion);
+-    setArtefactoSeleccionado(null);
+-    setContenidoArtefacto("");
+-    if (isElectron) {
+-      const arts = await window.antigravity.getSessionArtifacts(sesion.id);
+-      setArtefactosSesion(arts);
+-    }
++  /* ── Seleccionar sesión ── */
++  const seleccionarSesion = async (s: Sesion) => {
++    setSesionSeleccionada(s); setArtefactoSeleccionado(null); setContenidoArtefacto('');
++    if (isElectron) setArtefactosSesion(await window.antigravity.getSessionArtifacts(s.id));
+   };
+-
+-  // Leer artefacto
+   const leerArtefacto = async (sesionId: string, filename: string) => {
+     setArtefactoSeleccionado(filename);
+-    if (isElectron) {
+-      const content = await window.antigravity.readArtifact(sesionId, filename);
+-      setContenidoArtefacto(content || "No se pudo leer el archivo.");
+-    }
+-  };
+-
+-  // Crear respaldo
+-  const crearRespaldo = useCallback(async () => {
+-    if (!isElectron) return;
+-    setRespaldando(true);
+-    setMensajeRespaldo(null);
+-    try {
+-      const result = await window.antigravity.createBackup();
+-      setMensajeRespaldo(result.mensaje);
+-      if (result.exito && modoAuto) {
+-        setLogsAuto(prev => [...prev, `[${new Date().toLocaleTimeString("es-ES")}] 💾 ${result.mensaje}`]);
+-      }
+-    } catch (err) {
+-      setMensajeRespaldo(`Error: ${err}`);
+-    }
+-    setRespaldando(false);
+-  }, [isElectron, modoAuto]);
+-
+-  // Limpiar archivos .resolved
+-  const limpiarResolved = async () => {
+-    if (!isElectron) return;
+-    setLimpiando(true);
+-    setMensajeLimpieza(null);
+-    try {
+-      const result = await window.antigravity.cleanResolved();
+-      setMensajeLimpieza(result.mensaje);
+-      // Recargar salud
+-      const health = await window.antigravity.getSystemHealth();
+-      setSalud(health);
+-    } catch (err) {
+-      setMensajeLimpieza(`Error: ${err}`);
+-    }
+-    setLimpiando(false);
+-  };
+-
+-  // Verificar integridad
+-  const verificarIntegridad = async () => {
+-    if (!isElectron) return;
+-    setVerificando(true);
+-    try {
+-      const result = await window.antigravity.verifyIntegrity();
+-      setResultadoIntegridad(result);
+-    } catch (err) {
+-      console.error("Error verificando integridad:", err);
+-    }
+-    setVerificando(false);
+-  };
+-
+-  // Limpiar extensiones innecesarias
+-  const limpiarExtensiones = async () => {
+-    if (!isElectron) return;
+-    setLimpiandoExtensiones(true);
+-    setMensajeMantenimiento(null);
+-    try {
+-      const result = await window.antigravity.cleanExtensions();
+-      setMensajeMantenimiento(result.mensaje);
+-      // Recargar info
+-      const maint = await window.antigravity.getMaintenanceInfo();
+-      setMantenimiento(maint);
+-    } catch (err) {
+-      setMensajeMantenimiento(`Error: ${err}`);
+-    }
+-    setLimpiandoExtensiones(false);
+-  };
+-
+-  // Limpiar cache del browser
+-  const limpiarBrowserCache = async () => {
+-    if (!isElectron) return;
+-    setLimpiandoCache(true);
+-    setMensajeMantenimiento(null);
+-    try {
+-      const result = await window.antigravity.cleanBrowserCache();
+-      setMensajeMantenimiento(result.mensaje);
+-      // Recargar info
+-      const maint = await window.antigravity.getMaintenanceInfo();
+-      setMantenimiento(maint);
+-    } catch (err) {
+-      setMensajeMantenimiento(`Error: ${err}`);
+-    }
+-    setLimpiandoCache(false);
+-  };
+-
+-  // Abrir conversación en Antigravity/VS Code
+-  const abrirConversacion = async (sessionId: string) => {
+-    if (!isElectron) return;
+-    try {
+-      const result = await window.antigravity.openConversation(sessionId);
+-      setMensajeApertura(result.mensaje);
+-      setTimeout(() => setMensajeApertura(null), 3000);
+-    } catch (err) {
+-      setMensajeApertura(`Error: ${err}`);
+-    }
+-  };
+-
+-  const archivosFiltrados = useMemo(() => {
+-    return archivosSalida.filter((o) => o.titulo.toLowerCase().includes(busqueda.toLowerCase()));
+-  }, [busqueda, archivosSalida]);
+-
+-  const animEntrada = {
+-    initial: { opacity: 0, y: 16 },
+-    animate: { opacity: 1, y: 0 },
+-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+-  };
+-
+-  const stagger = {
+-    animate: { transition: { staggerChildren: 0.06 } },
+-  };
+-
+-  // Estimación de tokens consumidos (aprox 4 chars = 1 token)
+-  const tokensEstimados = useMemo(() => {
+-    const totalBytes = sesiones.reduce((acc, s) => acc + s.tamañoPB, 0);
+-    return Math.round(totalBytes / 4);
+-  }, [sesiones]);
+-
+-  const formatTokens = (n: number) => {
+-    if (n > 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+-    if (n > 1_000) return `${(n / 1_000).toFixed(0)}K`;
+-    return `${n}`;
++    if (isElectron) setContenidoArtefacto(await window.antigravity.readArtifact(sesionId, filename) || '');
+   };
+ 
+-  // Módulos dashboard con indicadores VIVOS
++  /* ── Métricas ── */
++  const tokensEstimados = useMemo(() => Math.round(sesiones.reduce((a, s) => a + s.tamañoPB, 0) / 4), [sesiones]);
++  const archivosFiltrados = useMemo(() => archivosSalida.filter(o => o.titulo.toLowerCase().includes(busqueda.toLowerCase())), [busqueda, archivosSalida]);
+   const servidoresOk = servers.filter(s => serverAutoStatus[s.id]?.ok).length;
+-  const servidoresTotal = servers.length;
+   const apisBajaSaldo = apis.filter(a => a.saldo > 0 && a.limiteAlerta > 0 && a.saldo < a.limiteAlerta).length;
+ 
+-  const modulos = [
+-    { id: "sessions", nombre: "Sesiones", icono: Play, cantidad: sesiones.length, color: "text-emerald-400" },
+-    { id: "servers", nombre: "Servidores", icono: Server, cantidad: `${servidoresOk}/${servidoresTotal}`, color: servidoresOk === servidoresTotal ? "text-emerald-400" : "text-rose-400" },
+-    { id: "tokens", nombre: "Tokens", icono: Zap, cantidad: formatTokens(tokensEstimados), color: "text-amber-400" },
+-    { id: "apis", nombre: "APIs", icono: Key, cantidad: apisBajaSaldo > 0 ? `${apisBajaSaldo} alerta` : `${apis.length} OK`, color: apisBajaSaldo > 0 ? "text-rose-400" : "text-cyan-400" },
+-    { id: "knowledge", nombre: "KIs", icono: Brain, cantidad: knowledgeItems.length, color: "text-violet-400" },
+-  ];
+-
+-  return (
+-    <div className="min-h-screen bg-background text-foreground bg-pattern relative overflow-hidden">
+-      {/* Scanline overlay */}
+-      <div className="pointer-events-none fixed inset-0 z-0" style={{
+-        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
+-        backgroundSize: '100% 4px',
+-      }} />
+-      {/* Neon corner accents */}
+-      <div className="pointer-events-none fixed top-0 left-0 w-32 h-32 z-0" style={{
+-        background: 'radial-gradient(circle at 0% 0%, rgba(0,255,200,0.08) 0%, transparent 70%)'
+-      }} />
+-      <div className="pointer-events-none fixed bottom-0 right-0 w-48 h-48 z-0" style={{
+-        background: 'radial-gradient(circle at 100% 100%, rgba(255,45,149,0.06) 0%, transparent 70%)'
+-      }} />
+-
+-      {/* Barra de arrastre para titlebar oculto */}
+-      <div className="h-8 w-full relative z-10" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
+-
+-      {/* ══════════ CMD+K SPOTLIGHT ══════════ */}
+-      <AnimatePresence>
+-        {showSpotlight && (
+-          <motion.div
+-            initial={{ opacity: 0 }}
+-            animate={{ opacity: 1 }}
+-            exit={{ opacity: 0 }}
+-            className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]"
+-            onClick={() => setShowSpotlight(false)}
+-          >
+-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+-            <motion.div
+-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+-              animate={{ opacity: 1, scale: 1, y: 0 }}
+-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+-              transition={{ duration: 0.15 }}
+-              className="relative w-full max-w-xl bg-slate-900/95 border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/10 overflow-hidden"
+-              onClick={e => e.stopPropagation()}
+-            >
+-              <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50">
+-                <Search className="w-5 h-5 text-cyan-400" />
+-                <input
+-                  ref={spotlightRef}
+-                  type="text"
+-                  placeholder="Buscar sesiones, servidores, APIs, KIs..."
+-                  value={spotlightQuery}
+-                  onChange={e => setSpotlightQuery(e.target.value)}
+-                  onKeyDown={e => {
+-                    if (e.key === 'Escape') setShowSpotlight(false);
+-                    if (e.key === 'Enter' && spotlightResults.length > 0) {
+-                      setActiveTab(spotlightResults[0].tab);
+-                      setShowSpotlight(false);
+-                    }
+-                  }}
+-                  className="flex-1 bg-transparent text-slate-200 text-lg placeholder:text-slate-500 outline-none"
+-                />
+-                <kbd className="text-xs text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">ESC</kbd>
+-              </div>
+-              {spotlightResults.length > 0 && (
+-                <div className="max-h-80 overflow-y-auto">
+-                  {spotlightResults.map((r, i) => (
+-                    <button
+-                      key={`${r.tab}-${r.id || i}`}
+-                      onClick={() => { setActiveTab(r.tab); setShowSpotlight(false); }}
+-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-800/70 transition-colors text-left"
+-                    >
+-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400">
+-                        {r.tipo}
+-                      </span>
+-                      <span className="text-sm text-slate-200 truncate">{r.nombre}</span>
+-                    </button>
+-                  ))}
+-                </div>
+-              )}
+-              {spotlightQuery && spotlightResults.length === 0 && (
+-                <div className="px-4 py-6 text-center text-slate-500 text-sm">Sin resultados</div>
+-              )}
+-              {!spotlightQuery && (
+-                <div className="px-4 py-4 text-xs text-slate-600 flex gap-4 justify-center">
+-                  <span><kbd className="bg-slate-800 px-1 rounded">Cmd+1-8</kbd> Cambiar tab</span>
+-                  <span><kbd className="bg-slate-800 px-1 rounded">Cmd+R</kbd> Refrescar</span>
+-                  <span><kbd className="bg-slate-800 px-1 rounded">Cmd+B</kbd> Backup</span>
++  /* ══════════════════════════════════════════════════════════════
++     RENDER TABS
++  ══════════════════════════════════════════════════════════════ */
++
++  function renderSesiones() {
++    return (
++      <motion.div {...animFade} className="grid xl:grid-cols-2 gap-4 h-full">
++        {/* Lista */}
++        <div className="panel flex flex-col gap-0 overflow-hidden">
++          <div className="p-5 border-b border-[var(--border-default)]">
++            <div className="section-title flex items-center gap-2">
++              <Clock3 className="w-4 h-4 text-cyan-400" /> Sesiones
++            </div>
++            <div className="section-sub">{sesiones.length} conversaciones · {formatTokens(tokensEstimados)} tokens estimados</div>
++          </div>
++          <ScrollArea className="flex-1">
++            <div className="p-3 space-y-1">
++              {sesiones.length === 0 ? (
++                <div className="empty-state">
++                  <FolderOpen className="w-8 h-8 opacity-20" />
++                  <span className="text-sm">{isElectron ? "Cargando sesiones..." : "Ejecutar como app de escritorio"}</span>
+                 </div>
+-              )}
+-            </motion.div>
+-          </motion.div>
+-        )}
+-      </AnimatePresence>
+-
+-      <div className="max-w-7xl mx-auto px-6 pb-6 space-y-6 relative z-10">
+-
+-        {/* ══════════ CABECERA CYBERPUNK ══════════ */}
+-        <motion.div {...animEntrada} className="grid lg:grid-cols-[1.4fr_0.8fr] gap-6">
+-          <Card className="rounded-3xl border border-cyan-500/15 bg-slate-900/80 backdrop-blur-xl overflow-hidden relative">
+-            {/* Animated border glow */}
+-            <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{
+-              background: 'linear-gradient(135deg, rgba(0,255,200,0.05), rgba(0,212,255,0.03), rgba(255,45,149,0.03))',
+-            }} />
+-            {/* Top edge neon line */}
+-            <div className="absolute top-0 left-8 right-8 h-px" style={{
+-              background: 'linear-gradient(90deg, transparent, #00ffc8, #00d4ff, #ff2d95, transparent)',
+-            }} />
+-
+-            <CardHeader>
+-              <div className="flex items-center justify-between gap-4 flex-wrap">
+-                <div className="flex items-center gap-4">
+-                  {/* LOGO CYBERPUNK */}
+-                  <motion.div
+-                    className="logo-cyberpunk relative flex-shrink-0"
+-                    whileHover={{ scale: 1.08, rotate: 2 }}
+-                    whileTap={{ scale: 0.95 }}
+-                    transition={{ type: 'spring', stiffness: 300 }}
++              ) : sesiones.map((s, i) => {
++                const tokens = Math.round(s.tamañoPB / 4);
++                const isSelected = sesionSeleccionada?.id === s.id;
++                return (
++                  <motion.button key={`${s.id}-${i}`} variants={staggerItem}
++                    onClick={() => seleccionarSesion(s)}
++                    className={`list-item w-full text-left ${isSelected ? 'selected' : ''}`}
+                   >
+-                    {/* Orbital system */}
+-                    <div className="logo-ring">
+-                      <div className="logo-orbit-particle" />
+-                      <div className="logo-orbit-particle" />
+-                      <div className="logo-orbit-particle" />
+-                    </div>
+-                    <div className="logo-sonar" />
+-                    <div className="logo-circuit top-left" />
+-                    <div className="logo-circuit top-right" />
+-                    <div className="logo-circuit bottom-left" />
+-                    <div className="logo-circuit bottom-right" />
+-                    <img
+-                      src={logoBrain}
+-                      alt="Antigravity Brain"
+-                      className="w-20 h-20 rounded-lg object-cover logo-neon relative z-10"
+-                    />
+-                  </motion.div>
+-
+-                  <div>
+-                    <CardTitle className="text-3xl flex items-center gap-2">
+-                      <span className="cyber-title text-3xl font-black">Antigravity Brain</span>
+-                    </CardTitle>
+-                    <CardDescription className="text-base mt-1.5 font-mono text-slate-500">
+-                      {isElectron
+-                        ? <span className="text-cyan-400/80">&gt;_ {salud?.tamañoTotal ?? '...'} · {sesiones.length} sess · ~{formatTokens(tokensEstimados)} tok · {knowledgeItems.length} KIs</span>
+-                        : <span className="text-rose-400">[ERROR] No electron context — run in desktop mode</span>
+-                      }
+-                    </CardDescription>
+-                  </div>
+-                </div>
+-
+-                <div className="flex items-center gap-2 flex-wrap">
+-                  <BotonAutoMode activo={modoAuto} onChange={setModoAuto} />
+-                  {isElectron && (
+-                    <Badge className="rounded-full px-3 py-1 bg-emerald-500/15 text-emerald-300 border-emerald-500/30 font-mono text-xs">
+-                      <span className="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 status-blink inline-block" />
+-                      ONLINE
+-                    </Badge>
+-                  )}
+-                  <Badge className="rounded-full px-3 py-1 bg-cyan-500/15 text-cyan-300 border-cyan-500/30 font-mono text-xs">LOCAL-FIRST</Badge>
+-                  <Badge className="rounded-full px-3 py-1 bg-violet-500/15 text-violet-300 border-violet-500/30 font-mono text-xs">v2.0</Badge>
+-                </div>
+-              </div>
+-            </CardHeader>
+-
+-            <CardContent>
+-              <motion.div className="grid md:grid-cols-5 gap-3" variants={stagger} initial="initial" animate="animate">
+-                {modulos.map((m) => (
+-                  <motion.div variants={animEntrada} whileHover={{ y: -4, scale: 1.03 }} key={m.id}>
+-                    <Card className="rounded-2xl border border-slate-700/40 bg-slate-900/60 shadow-none cursor-pointer group relative overflow-hidden h-full">
+-                      {/* Hover neon sweep */}
+-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+-                        background: 'linear-gradient(135deg, rgba(0,255,200,0.06), rgba(0,212,255,0.04))'
+-                      }} />
+-                      <CardContent className="p-4 flex flex-col items-center justify-center text-center h-[90px]">
+-                        <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1.5 font-mono uppercase tracking-wider">
+-                          <m.icono className={`w-3.5 h-3.5 ${m.color}`} />
+-                          {m.nombre}
++                    <div className="flex items-center gap-3">
++                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${s.estado === 'En riesgo' ? 'status-error' : s.estado === 'Saludable' ? 'status-online' : 'status-idle'}`} />
++                      <div className="min-w-0 flex-1">
++                        <div className="text-[13px] font-medium text-[var(--text-primary)] truncate">{s.titulo}</div>
++                        <div className="flex items-center gap-2 mt-0.5">
++                          <span className="text-[11px] text-[var(--text-tertiary)] font-mono">{s.tamañoPBFormateado}</span>
++                          <span className="text-[11px] text-amber-400/70 font-mono">~{formatTokens(tokens)} tok</span>
++                          <span className="text-[11px] text-[var(--text-tertiary)]">{s.totalArtefactos} artefactos</span>
+                         </div>
+-                        <div className={`text-2xl font-black ${m.color} font-mono leading-none`}>{m.cantidad}</div>
+-                      </CardContent>
+-                    </Card>
+-                  </motion.div>
+-                ))}
+-              </motion.div>
+-            </CardContent>
+-          </Card>
+-
+-          <Card className="rounded-3xl glass-card border-0">
+-            <CardHeader>
+-              <CardTitle className="flex items-center gap-2 text-slate-200">
+-                <Activity className="w-5 h-5 text-violet-400" />
+-                Salud del Sistema
+-              </CardTitle>
+-              <CardDescription className="text-slate-500">
+-                Métricas reales de tu instalación de Antigravity.
+-              </CardDescription>
+-            </CardHeader>
+-            <CardContent className="space-y-5">
+-              <div>
+-                <div className="flex justify-between text-sm mb-2">
+-                  <span className="text-slate-400">Seguridad de sesiones</span>
+-                  <span className="font-medium text-emerald-400">{salud?.seguridadSesiones ?? 0}%</span>
+-                </div>
+-                <Progress value={salud?.seguridadSesiones ?? 0} className="h-2" />
+-              </div>
+-              <div>
+-                <div className="flex justify-between text-sm mb-2">
+-                  <span className="text-slate-400">Externalización de prompts</span>
+-                  <span className="font-medium text-violet-400">{salud?.externalizacionPrompts ?? 0}%</span>
+-                </div>
+-                <Progress value={salud?.externalizacionPrompts ?? 0} className="h-2" />
+-              </div>
+-              <div>
+-                <div className="flex justify-between text-sm mb-2">
+-                  <span className="text-slate-400">Riesgo de sobrecarga</span>
+-                  <span className="font-medium text-amber-400">{salud?.riesgoContexto ?? 0}%</span>
+-                </div>
+-                <Progress value={salud?.riesgoContexto ?? 0} className="h-2" />
+-              </div>
+-              <Separator className="bg-slate-700/50" />
+-              <div className="grid grid-cols-2 gap-3 text-sm">
+-                <div className="rounded-2xl bg-slate-800/50 p-4 border border-slate-700/50">
+-                  <div className="text-slate-500 flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> En disco</div>
+-                  <div className="text-xl font-bold mt-1 text-slate-100">{salud?.tamañoTotal ?? "—"}</div>
+-                </div>
+-                <div className="rounded-2xl bg-slate-800/50 p-4 border border-slate-700/50">
+-                  <div className="text-slate-500 flex items-center gap-1.5"><Database className="w-3.5 h-3.5" /> Conversaciones</div>
+-                  <div className="text-xl font-bold mt-1 text-slate-100">{salud?.totalConversaciones ?? 0}</div>
+-                </div>
+-              </div>
+-            </CardContent>
+-          </Card>
+-        </motion.div>
+-
+-        {/* ══════════ PANEL AUTO MODE ══════════ */}
+-        <AnimatePresence>
+-          {modoAuto && (
+-            <motion.div
+-              initial={{ opacity: 0, height: 0 }}
+-              animate={{ opacity: 1, height: "auto" }}
+-              exit={{ opacity: 0, height: 0 }}
+-              transition={{ duration: 0.4 }}
+-            >
+-              <Card className="rounded-3xl glass-card border-0 glow-green">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-emerald-400">
+-                    <Zap className="w-5 h-5" />
+-                    Modo Automático Activo
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    Monitorización en tiempo real de tus sesiones de Antigravity. Escaneo cada 30 segundos.
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent>
+-                  <ScrollArea className="h-[200px] rounded-2xl bg-slate-900/70 border border-slate-700/50 p-4 font-mono text-sm">
+-                    {logsAuto.length === 0 ? (
+-                      <div className="text-slate-600 flex items-center gap-2">
+-                        <RefreshCw className="w-4 h-4 animate-spin" /> Iniciando monitorización automática...
+-                      </div>
+-                    ) : (
+-                      logsAuto.map((log, i) => (
+-                        <motion.div
+-                          key={i}
+-                          initial={{ opacity: 0, x: -10 }}
+-                          animate={{ opacity: 1, x: 0 }}
+-                          className="text-slate-300 mb-1.5 leading-relaxed"
+-                        >
+-                          {log}
+-                        </motion.div>
+-                      ))
+-                    )}
+-                    <div ref={logEndRef} />
+-                  </ScrollArea>
+-                  <div className="flex gap-3 mt-4 flex-wrap">
+-                    <Badge className="rounded-full bg-emerald-500/15 text-emerald-400 border-emerald-500/30 px-3 py-1.5">
+-                      <Timer className="w-3.5 h-3.5 mr-1.5" /> Intervalo: 30s
+-                    </Badge>
+-                    <Badge className="rounded-full bg-violet-500/15 text-violet-400 border-violet-500/30 px-3 py-1.5">
+-                      <Shield className="w-3.5 h-3.5 mr-1.5" /> Datos: en vivo
+-                    </Badge>
+-                    <Badge className="rounded-full bg-cyan-500/15 text-cyan-400 border-cyan-500/30 px-3 py-1.5">
+-                      <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Fuente: ~/.gemini/antigravity/
+-                    </Badge>
+-                  </div>
+-                </CardContent>
+-              </Card>
+-            </motion.div>
+-          )}
+-        </AnimatePresence>
+-
+-        {/* ══════════ PESTAÑAS PRINCIPALES ══════════ */}
+-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+-          <TabsList className="grid grid-cols-7 rounded-2xl w-full bg-slate-800/60 border border-slate-700/50">
+-            <TabsTrigger value="sesiones" className="rounded-xl data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300">
+-              <Rocket className="w-4 h-4 mr-1.5" /> Sesiones
+-            </TabsTrigger>
+-            <TabsTrigger value="prompts" className="rounded-xl data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300">
+-              <FolderKanban className="w-4 h-4 mr-1.5" /> Prompts
+-            </TabsTrigger>
+-            <TabsTrigger value="salidas" className="rounded-xl data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300">
+-              <Database className="w-4 h-4 mr-1.5" /> Salidas
+-            </TabsTrigger>
+-            <TabsTrigger value="reparar" className="rounded-xl data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300">
+-              <Wrench className="w-4 h-4 mr-1.5" /> Reparar
+-            </TabsTrigger>
+-            <TabsTrigger value="apis" className="rounded-xl data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-300">
+-              <Key className="w-4 h-4 mr-1" /> APIs
+-            </TabsTrigger>
+-            <TabsTrigger value="servidores" className="rounded-xl data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-300">
+-              <Server className="w-4 h-4 mr-1.5" /> Servidores
+-            </TabsTrigger>
+-            <TabsTrigger value="conocimiento" className="rounded-xl data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300">
+-              <Brain className="w-4 h-4 mr-1.5" /> Conocimiento
+-            </TabsTrigger>
+-            <TabsTrigger value="info" className="rounded-xl data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-300">
+-              <Info className="w-4 h-4 mr-1.5" /> Info
+-            </TabsTrigger>
+-          </TabsList>
+-
+-          {/* ───── SESIONES ───── */}
+-          <TabsContent value="sesiones">
+-            <motion.div {...animEntrada} className="grid xl:grid-cols-[1fr_1fr] gap-6">
+-              {/* Lista de sesiones reales */}
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Clock3 className="w-5 h-5 text-cyan-400" /> Sesiones de Antigravity
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    {sesiones.length} conversaciones encontradas en tu instalación local.
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent className="space-y-3">
+-                  {sesiones.length === 0 ? (
+-                    <div className="text-slate-600 text-center py-8">
+-                      {isElectron ? "Cargando sesiones..." : "Ejecuta como app de escritorio para ver datos reales"}
+-                    </div>
+-                  ) : (
+-                    sesiones.map((s, idx) => {
+-                      const tokens = Math.round(s.tamañoPB / 4);
+-                      const borderColor = s.estado === "En riesgo" ? "border-l-rose-500" : s.estado === "Saludable" ? "border-l-emerald-500" : "border-l-slate-600";
+-                      return (
+-                        <motion.button
+-                          key={`${s.id}-${idx}`}
+-                          onClick={() => seleccionarSesion(s)}
+-                          whileHover={{ x: 3 }}
+-                          className={`w-full text-left rounded-2xl border border-l-4 p-4 transition-all duration-200 ${borderColor} ${
+-                            sesionSeleccionada?.id === s.id
+-                              ? "bg-violet-500/10 border-violet-500/30"
+-                              : "border-slate-700/50 bg-slate-800/40 hover:border-slate-600"
+-                          }`}
+-                        >
+-                          <div className="flex items-start justify-between gap-3">
+-                            <div className="min-w-0 flex-1">
+-                              <div className="font-medium text-slate-200 truncate">{s.titulo}</div>
+-                              <div className="text-sm text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+-                                <span>{s.tamañoPBFormateado}</span>
+-                                <span>·</span>
+-                                <span className="text-amber-400/80 font-mono text-xs">~{formatTokens(tokens)} tok</span>
+-                                <span>·</span>
+-                                <span>{s.totalArtefactos} artefactos</span>
+-                                <span>·</span>
+-                                <span>{tiempoRelativo(s.fechaModificacion)}</span>
+-                              </div>
+-                            </div>
+-                            <IndicadorEstado valor={s.estado} />
+-                          </div>
+-                        </motion.button>
+-                      );
+-                    })
+-                  )}
+-                </CardContent>
+-              </Card>
+-
+-              {/* Detalle de sesión seleccionada */}
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Eye className="w-5 h-5 text-violet-400" />
+-                    {sesionSeleccionada ? "Detalle de Sesión" : "Selecciona una Sesión"}
+-                  </CardTitle>
+-                  {sesionSeleccionada && (
+-                    <CardDescription className="text-slate-500 font-mono text-xs break-all">
+-                      ID: {sesionSeleccionada.id}
+-                    </CardDescription>
+-                  )}
+-                </CardHeader>
+-                <CardContent>
+-                  {!sesionSeleccionada ? (
+-                    <div className="text-slate-600 text-center py-12">
+-                      <FolderOpen className="w-10 h-10 mx-auto mb-3 text-slate-700" />
+-                      Haz clic en una sesión para ver sus artefactos
+-                    </div>
+-                  ) : (
+-                    <div className="space-y-3">
+-                      {/* Lista de artefactos */}
+-                      <div className="text-sm font-medium text-slate-400 mb-2">
+-                        Artefactos ({artefactosSesion.length})
+                       </div>
+-                      {artefactosSesion.filter(a => a.esTexto && !a.nombre.endsWith('.metadata.json')).map((art) => (
+-                        <motion.button
+-                          key={art.nombre}
+-                          onClick={() => leerArtefacto(sesionSeleccionada.id, art.nombre)}
+-                          whileHover={{ x: 3 }}
+-                          className={`w-full text-left rounded-2xl border p-3 transition-all duration-200 ${
+-                            artefactoSeleccionado === art.nombre
+-                              ? "bg-violet-500/10 border-violet-500/30"
+-                              : "border-slate-700/50 bg-slate-800/40 hover:border-slate-600"
+-                          }`}
+-                        >
+-                          <div className="flex items-center justify-between gap-3">
+-                            <div className="flex items-center gap-2">
+-                              <FileText className="w-4 h-4 text-violet-400" />
+-                              <span className="text-slate-200 text-sm">{art.nombre}</span>
+-                            </div>
+-                            <span className="text-slate-600 text-xs">{art.tamaño}</span>
+-                          </div>
+-                        </motion.button>
+-                      ))}
+-
+-                      {/* Contenido del artefacto */}
+-                      {artefactoSeleccionado && (
+-                        <motion.div
+-                          initial={{ opacity: 0, y: 8 }}
+-                          animate={{ opacity: 1, y: 0 }}
+-                        >
+-                          <div className="text-sm font-medium text-slate-400 mt-4 mb-2">
+-                            📄 {artefactoSeleccionado}
+-                          </div>
+-                          <ScrollArea className="h-[300px] rounded-2xl bg-slate-900/70 border border-slate-700/50 p-4">
+-                            <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono leading-relaxed">
+-                              {contenidoArtefacto}
+-                            </pre>
+-                          </ScrollArea>
+-                        </motion.div>
+-                      )}
+-
+-                      {/* Botones de acción */}
+-                      {isElectron && sesionSeleccionada && (
+-                        <div className="flex gap-2 mt-3 flex-wrap">
+-                          <Button
+-                            className="rounded-2xl bg-violet-600 hover:bg-violet-500 text-white"
+-                            onClick={() => abrirConversacion(sesionSeleccionada.id)}
+-                          >
+-                            <Code2 className="w-4 h-4 mr-1.5" /> Abrir en Antigravity
+-                          </Button>
+-                          <Button
+-                            className="rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white"
+-                            onClick={async () => {
+-                              const result = await window.antigravity.generateKIFromSession(sesionSeleccionada.id);
+-                              setMensajeApertura(result.mensaje);
+-                              setTimeout(() => setMensajeApertura(null), 4000);
+-                              // Recargar knowledge
+-                              const ki = await window.antigravity.getKnowledge();
+-                              setKnowledgeItems(ki);
+-                            }}
+-                          >
+-                            <Brain className="w-4 h-4 mr-1.5" /> Guardar como KI
+-                          </Button>
+-                          <Button
+-                            variant="outline"
+-                            className="rounded-2xl border-slate-700 text-slate-300 hover:bg-slate-800"
+-                            onClick={() => {
+-                              const art = artefactosSesion[0];
+-                              if (art) window.antigravity.openInFinder(art.ruta);
+-                            }}
+-                          >
+-                            <ExternalLink className="w-4 h-4 mr-1.5" /> Finder
+-                          </Button>
+-                        </div>
+-                      )}
+-                      {mensajeApertura && (
+-                        <motion.div
+-                          initial={{ opacity: 0, y: -4 }}
+-                          animate={{ opacity: 1, y: 0 }}
+-                          className="mt-2 rounded-2xl p-3 text-sm bg-violet-500/10 text-violet-400 border border-violet-500/30"
+-                        >
+-                          {mensajeApertura}
+-                        </motion.div>
+-                      )}
+-                    </div>
+-                  )}
+-                </CardContent>
+-              </Card>
+-            </motion.div>
+-          </TabsContent>
+-
+-          {/* ───── PROMPTS ───── */}
+-          <TabsContent value="prompts">
+-            <motion.div {...animEntrada} className="grid xl:grid-cols-[0.7fr_1.3fr] gap-6">
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader className="pb-3">
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <FolderKanban className="w-5 h-5 text-cyan-400" /> Biblioteca de Prompts
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500 text-xs">
+-                    {bibliotecaPrompts.length} plantillas · Click para editar, doble-click para copiar
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent>
+-                  <ScrollArea className="h-[420px] pr-2">
+-                    <div className="space-y-2">
+-                      {bibliotecaPrompts.map((p) => {
+-                        const badgeColors: Record<string, string> = {
+-                          'Producción': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+-                          'Debug': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+-                          'DevOps': 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+-                          'Infra': 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+-                          'Arquitectura': 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+-                          'APIs': 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+-                          'Database': 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+-                          'Handoff': 'bg-teal-500/15 text-teal-400 border-teal-500/30',
+-                          'Urgente': 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+-                          'Setup': 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30',
+-                        };
+-                        return (
+-                          <motion.button
+-                            key={p.nombre}
+-                            onClick={() => setPromptActivo(p)}
+-                            onDoubleClick={() => {
+-                              navigator.clipboard.writeText(p.contenido);
+-                            }}
+-                            whileHover={{ x: 3 }}
+-                            className={`w-full text-left rounded-xl border p-3 transition-all duration-200 ${
+-                              promptActivo.nombre === p.nombre
+-                                ? "bg-cyan-500/8 border-cyan-500/25"
+-                                : "bg-slate-800/30 border-slate-700/40 hover:border-slate-600"
+-                            }`}
+-                          >
+-                            <div className="flex items-center justify-between gap-2">
+-                              <div className="font-medium text-sm text-slate-200 truncate">{p.nombre}</div>
+-                              <Badge className={`rounded-full text-[10px] px-2 py-0 h-5 shrink-0 ${badgeColors[p.etiqueta] || 'bg-slate-500/15 text-slate-400 border-slate-500/30'}`}>
+-                                {p.etiqueta}
+-                              </Badge>
+-                            </div>
+-                            <div className="text-xs text-slate-500 mt-1 truncate font-mono">
+-                              {p.contenido.substring(0, 60)}…
+-                            </div>
+-                          </motion.button>
+-                        );
+-                      })}
+-                    </div>
+-                  </ScrollArea>
+-                </CardContent>
+-              </Card>
+-
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader className="pb-3">
+-                  <div className="flex items-center justify-between">
+-                    <CardTitle className="flex items-center gap-2 text-slate-200">
+-                      <FileText className="w-5 h-5 text-cyan-400" /> {promptActivo.nombre}
+-                    </CardTitle>
+-                    <span className="text-xs text-slate-500 font-mono">
+-                      {promptActivo.contenido.length} chars
+-                    </span>
+-                  </div>
+-                  <CardDescription className="text-slate-500 text-xs">
+-                    Edita y copia el prompt. Los campos entre [corchetes] son para rellenar.
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent className="space-y-3">
+-                  <Textarea
+-                    value={promptActivo.contenido}
+-                    onChange={(e) => setPromptActivo({ ...promptActivo, contenido: e.target.value })}
+-                    className="min-h-[350px] rounded-xl font-mono text-xs leading-relaxed bg-slate-800/40 border-slate-700/50 text-slate-200 focus:border-cyan-500/40 resize-none"
+-                  />
+-                  <div className="flex gap-2 flex-wrap">
+-                    <Button
+-                      onClick={() => navigator.clipboard.writeText(promptActivo.contenido)}
+-                      className="rounded-xl bg-cyan-600/80 hover:bg-cyan-500 text-white text-xs h-8 px-3"
+-                    >
+-                      <Copy className="w-3.5 h-3.5 mr-1" /> Copiar al Portapapeles
+-                    </Button>
+-                    <Button variant="outline" className="rounded-xl border-slate-700 text-slate-300 hover:bg-slate-800 text-xs h-8 px-3">
+-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Guardar Versión
+-                    </Button>
+-                    <Button variant="secondary" className="rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs h-8 px-3">
+-                      <ArrowRight className="w-3.5 h-3.5 mr-1" /> Enviar al Ejecutor
+-                    </Button>
+-                  </div>
+-                </CardContent>
+-              </Card>
+-            </motion.div>
+-          </TabsContent>
+-
+-          {/* ───── SALIDAS (BÓVEDA) ───── */}
+-          <TabsContent value="salidas">
+-            <motion.div {...animEntrada} className="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Database className="w-5 h-5 text-cyan-400" /> Bóveda de Salidas
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    {archivosSalida.length} archivos reales encontrados en tu directorio de Antigravity.
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent>
+-                  <div className="relative mb-4">
+-                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+-                    <Input
+-                      placeholder="Buscar archivos, prompts, scripts, traspasos..."
+-                      value={busqueda}
+-                      onChange={(e) => setBusqueda(e.target.value)}
+-                      className="pl-9 rounded-2xl bg-slate-800/50 border-slate-700 text-slate-200 placeholder:text-slate-600 focus:border-violet-500/50"
+-                    />
+-                  </div>
+-                  <ScrollArea className="h-[400px]">
+-                    <div className="space-y-2">
+-                      {archivosFiltrados.map((o, i) => (
+-                        <motion.div
+-                          key={`${o.sesionId}-${o.titulo}-${i}`}
+-                          whileHover={{ x: 3 }}
+-                          className="rounded-2xl border border-slate-700/50 p-3 bg-slate-800/40 flex items-center justify-between gap-4 interactive-hover cursor-pointer"
+-                          onClick={() => isElectron && window.antigravity.openInFinder(o.ruta)}
+-                        >
+-                          <div className="flex items-center gap-3 min-w-0">
+-                            <IconoTipo tipo={o.tipo} />
+-                            <div className="min-w-0">
+-                              <div className="font-medium text-slate-200 text-sm truncate">{o.titulo}</div>
+-                              <div className="text-xs text-slate-500 mt-0.5">{o.tipo} · {o.tamaño} · {tiempoRelativo(o.fechaModificacion)}</div>
+-                            </div>
+-                          </div>
+-                          {o.sincronizado ? (
+-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+-                          ) : (
+-                            <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+-                          )}
+-                        </motion.div>
+-                      ))}
++                      <span className="text-[11px] text-[var(--text-tertiary)] flex-shrink-0">{tiempoRelativo(s.fechaModificacion)}</span>
+                     </div>
+-                  </ScrollArea>
+-                </CardContent>
+-              </Card>
+-
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="text-slate-200">Reglas de Exportación</CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    Disciplina mínima que previene que la pérdida de historial te afecte.
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent className="space-y-4 text-sm">
+-                  {[
+-                    "Cada prompt terminado se convierte en un archivo versionado.",
+-                    "Cada respuesta útil se convierte en una nota de traspaso o archivo de código.",
+-                    "Nunca confíes en un hilo largo de Antigravity como fuente de verdad.",
+-                    "Usa una sola sesión por tarea acotada.",
+-                  ].map((regla, i) => (
+-                    <motion.div
+-                      key={i}
+-                      whileHover={{ x: 3 }}
+-                      className="rounded-2xl border border-slate-700/50 p-4 bg-slate-800/40 text-slate-300 interactive-hover"
++                  </motion.button>
++                );
++              })}
++            </div>
++          </ScrollArea>
++        </div>
++
++        {/* Detalle */}
++        <div className="panel flex flex-col overflow-hidden">
++          <div className="p-5 border-b border-[var(--border-default)]">
++            <div className="section-title flex items-center gap-2">
++              <Eye className="w-4 h-4 text-violet-400" />
++              {sesionSeleccionada ? "Detalle de Sesión" : "Selecciona una sesión"}
++            </div>
++            {sesionSeleccionada && (
++              <div className="section-sub font-mono truncate">{sesionSeleccionada.id}</div>
++            )}
++          </div>
++          <ScrollArea className="flex-1">
++            <div className="p-4">
++              {!sesionSeleccionada ? (
++                <div className="empty-state">
++                  <Eye className="w-8 h-8 opacity-20" />
++                  <span className="text-sm">Haz clic en una sesión para ver sus artefactos</span>
++                </div>
++              ) : (
++                <div className="space-y-3">
++                  <div className="text-[12px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Artefactos ({artefactosSesion.length})</div>
++                  {artefactosSesion.filter(a => a.esTexto && !a.nombre.endsWith('.metadata.json')).map(art => (
++                    <button key={art.nombre} onClick={() => leerArtefacto(sesionSeleccionada.id, art.nombre)}
++                      className={`list-item w-full text-left ${artefactoSeleccionado === art.nombre ? 'selected' : ''}`}
+                     >
+-                      <span className="text-violet-400 font-bold mr-2">{i + 1}.</span>
+-                      {regla}
+-                    </motion.div>
++                      <div className="flex items-center justify-between gap-3">
++                        <div className="flex items-center gap-2">
++                          <FileText className="w-3.5 h-3.5 text-violet-400" />
++                          <span className="text-[13px] text-[var(--text-primary)]">{art.nombre}</span>
++                        </div>
++                        <span className="text-[11px] text-[var(--text-tertiary)] font-mono">{art.tamaño}</span>
++                      </div>
++                    </button>
+                   ))}
+-                </CardContent>
+-              </Card>
+-            </motion.div>
+-          </TabsContent>
+ 
+-          {/* ───── REPARAR ───── */}
+-          <TabsContent value="reparar">
+-            <motion.div {...animEntrada} className="grid xl:grid-cols-[1fr_1fr] gap-6">
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Wrench className="w-5 h-5 text-amber-400" /> Centro de Reparación
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    Acciones directas sobre tu instalación de Antigravity.
+-                    {salud && salud.conversacionesGrandes > 0 && (
+-                      <span className="text-amber-400"> ⚠️ {salud.conversacionesGrandes} conversación(es) superan 3MB.</span>
+-                    )}
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent className="grid md:grid-cols-2 gap-4">
+-                  <Button
+-                    onClick={crearRespaldo}
+-                    disabled={respaldando || !isElectron}
+-                    className="rounded-2xl h-20 justify-start text-left bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/30"
+-                  >
+-                    {respaldando ? (
+-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+-                    ) : (
+-                      <Archive className="w-5 h-5 mr-2" />
+-                    )}
+-                    <div>
+-                      <div className="font-medium">{respaldando ? "Creando respaldo..." : "Crear Respaldo ZIP"}</div>
+-                      <div className="text-xs text-emerald-400/60 mt-0.5">Guarda en ~/Desktop/antigravity_backups/</div>
+-                    </div>
+-                  </Button>
+-                  <Button
+-                    onClick={() => {
+-                      if (isElectron && salud?.basePath) {
+-                        window.antigravity.openInFinder(salud.basePath);
+-                      }
+-                    }}
+-                    className="rounded-2xl h-20 justify-start text-left bg-slate-700/40 hover:bg-slate-700/60 text-slate-300 border border-slate-600/50"
+-                  >
+-                    <FolderOpen className="w-5 h-5 mr-2" />
+-                    <div>
+-                      <div className="font-medium">Abrir en Finder</div>
+-                      <div className="text-xs text-slate-500 mt-0.5">~/.gemini/antigravity/</div>
+-                    </div>
+-                  </Button>
+-                  <Button
+-                    onClick={limpiarResolved}
+-                    disabled={limpiando || !isElectron}
+-                    className="rounded-2xl h-20 justify-start text-left bg-amber-600/15 hover:bg-amber-600/25 text-amber-300 border border-amber-500/30"
+-                  >
+-                    {limpiando ? (
+-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+-                    ) : (
+-                      <Trash2 className="w-5 h-5 mr-2" />
+-                    )}
+-                    <div>
+-                      <div className="font-medium">{limpiando ? "Limpiando..." : "Limpiar Archivos Resolved"}</div>
+-                      <div className="text-xs text-amber-400/60 mt-0.5">{salud?.totalResolved ?? 0} archivos .resolved detectados</div>
+-                    </div>
+-                  </Button>
+-                  <Button
+-                    onClick={verificarIntegridad}
+-                    disabled={verificando || !isElectron}
+-                    className="rounded-2xl h-20 justify-start text-left bg-slate-700/40 hover:bg-slate-700/60 text-slate-300 border border-slate-600/50"
+-                  >
+-                    {verificando ? (
+-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+-                    ) : (
+-                      <ShieldCheck className="w-5 h-5 mr-2" />
+-                    )}
+-                    <div>
+-                      <div className="font-medium">{verificando ? "Verificando..." : "Verificar Integridad"}</div>
+-                      <div className="text-xs text-slate-500 mt-0.5">Comprobar coherencia de datos</div>
+-                    </div>
+-                  </Button>
+-                </CardContent>
+-
+-                {/* Mensaje de resultado del respaldo */}
+-                <AnimatePresence>
+-                  {mensajeRespaldo && (
+-                    <motion.div
+-                      initial={{ opacity: 0, y: -8 }}
+-                      animate={{ opacity: 1, y: 0 }}
+-                      exit={{ opacity: 0 }}
+-                      className="px-6 pb-3"
+-                    >
+-                      <div className={`rounded-2xl p-4 text-sm ${
+-                        mensajeRespaldo.includes("Error")
+-                          ? "bg-red-500/10 text-red-400 border border-red-500/30"
+-                          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+-                      }`}>
+-                        {mensajeRespaldo}
+-                      </div>
+-                    </motion.div>
+-                  )}
+-                  {mensajeLimpieza && (
+-                    <motion.div
+-                      initial={{ opacity: 0, y: -8 }}
+-                      animate={{ opacity: 1, y: 0 }}
+-                      exit={{ opacity: 0 }}
+-                      className="px-6 pb-3"
+-                    >
+-                      <div className="rounded-2xl p-4 text-sm bg-amber-500/10 text-amber-400 border border-amber-500/30">
+-                        {mensajeLimpieza}
++                  {artefactoSeleccionado && (
++                    <motion.div {...animFade}>
++                      <div className="text-[12px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mt-4 mb-2">
++                        {artefactoSeleccionado}
+                       </div>
++                      <ScrollArea className="h-[240px] code-block">
++                        <pre className="text-[12px] text-[rgba(0,255,200,0.85)] whitespace-pre-wrap leading-relaxed">
++                          {contenidoArtefacto}
++                        </pre>
++                      </ScrollArea>
+                     </motion.div>
+                   )}
+-                  {resultadoIntegridad && (
+-                    <motion.div
+-                      initial={{ opacity: 0, y: -8 }}
+-                      animate={{ opacity: 1, y: 0 }}
+-                      exit={{ opacity: 0 }}
+-                      className="px-6 pb-6"
+-                    >
+-                      <div className={`rounded-2xl p-4 text-sm ${
+-                        (resultadoIntegridad.archivosCorruptos.length > 0 || resultadoIntegridad.artefactosSinMetadata.length > 0)
+-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/30"
+-                          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+-                      }`}>
+-                        <div className="flex items-center justify-between mb-2">
+-                          <span className="font-medium">
+-                            {(resultadoIntegridad.archivosCorruptos.length > 0 || resultadoIntegridad.artefactosSinMetadata.length > 0)
+-                              ? `⚠️ ${resultadoIntegridad.archivosCorruptos.length + resultadoIntegridad.artefactosSinMetadata.length} problema(s) real(es)`
+-                              : "✅ Sin problemas de integridad"}
+-                          </span>
+-                          <button
+-                            onClick={() => setResultadoIntegridad(null)}
+-                            className="text-slate-500 hover:text-slate-300 transition-colors"
+-                          >
+-                            <X className="w-4 h-4" />
+-                          </button>
+-                        </div>
+-                        {resultadoIntegridad.conversacionesSinBrain.length > 0 && (
+-                          <div className="text-slate-500 text-xs">
+-                            📁 {resultadoIntegridad.conversacionesSinBrain.length} conversaciones implícitas (normal, no son errores)
+-                          </div>
+-                        )}
+-                        {resultadoIntegridad.archivosCorruptos.length > 0 && (
+-                          <div>💀 Archivos corruptos: {resultadoIntegridad.archivosCorruptos.join(", ")}</div>
+-                        )}
+-                        {resultadoIntegridad.artefactosSinMetadata.length > 0 && (
+-                          <div>📎 Sin metadata: {resultadoIntegridad.artefactosSinMetadata.length} artefacto(s)</div>
+-                        )}
+-                      </div>
+-                    </motion.div>
+-                  )}
+-                </AnimatePresence>
+-              </Card>
+-
+-              <div className="space-y-6">
+-                <Card className="rounded-3xl glass-card border-0">
+-                  <CardHeader>
+-                    <CardTitle className="flex items-center gap-2 text-slate-200">
+-                      <ShieldCheck className="w-5 h-5 text-violet-400" /> Diagnóstico del Sistema
+-                    </CardTitle>
+-                    <CardDescription className="text-slate-500">
+-                      Estado actual detallado de tu instalación.
+-                    </CardDescription>
+-                  </CardHeader>
+-                  <CardContent className="space-y-3 text-sm">
+-                    {[
+-                      { label: "Espacio total en disco", value: salud?.tamañoTotal ?? "—", icon: HardDrive, color: "text-cyan-400" },
+-                      { label: "Conversaciones (.pb)", value: `${salud?.totalConversaciones ?? 0} archivos`, icon: Database, color: "text-violet-400" },
+-                      { label: "Artefactos (.md)", value: `${salud?.totalArtefactos ?? 0} documentos`, icon: FileText, color: "text-emerald-400" },
+-                      { label: "Imágenes y grabaciones", value: `${salud?.totalImagenes ?? 0} archivos`, icon: Image, color: "text-rose-400" },
+-                      { label: "Sesiones Brain", value: `${salud?.totalSesionesBrain ?? 0} directorios`, icon: Brain, color: "text-amber-400" },
+-                      { label: "Conversaciones grandes (>3MB)", value: `${salud?.conversacionesGrandes ?? 0}`, icon: AlertTriangle, color: salud && salud.conversacionesGrandes > 0 ? "text-amber-400" : "text-emerald-400" },
+-                    ].map((item, i) => (
+-                      <motion.div
+-                        key={i}
+-                        whileHover={{ x: 3 }}
+-                        className="rounded-2xl border border-slate-700/50 p-4 bg-slate-800/40 interactive-hover flex items-center justify-between"
+-                      >
+-                        <div className="flex items-center gap-2 text-slate-300">
+-                          <item.icon className={`w-4 h-4 ${item.color}`} />
+-                          {item.label}
+-                        </div>
+-                        <span className="font-medium text-slate-200">{item.value}</span>
+-                      </motion.div>
+-                    ))}
+-                  </CardContent>
+-                </Card>
+ 
+-                {/* ── MANTENIMIENTO PROFUNDO ── */}
+-                <Card className="rounded-3xl glass-card border-0">
+-                  <CardHeader>
+-                    <CardTitle className="flex items-center gap-2 text-slate-200">
+-                      <Sparkles className="w-5 h-5 text-cyan-400" /> Mantenimiento Profundo
+-                    </CardTitle>
+-                    <CardDescription className="text-slate-500">
+-                      Limpia extensiones innecesarias y cache del navegador integrado de Antigravity.
+-                    </CardDescription>
+-                  </CardHeader>
+-                  <CardContent className="space-y-4">
+-                    {/* Stats de mantenimiento */}
+-                    {mantenimiento && (
+-                      <div className="grid grid-cols-3 gap-3 text-sm">
+-                        <div className="rounded-2xl bg-slate-800/50 p-3 border border-slate-700/50 text-center">
+-                          <div className="text-slate-500 text-xs mb-1">Extensiones</div>
+-                          <div className="text-lg font-bold text-violet-400">{mantenimiento.extensiones.total}</div>
+-                          <div className="text-xs text-slate-600">{mantenimiento.extensiones.tamañoTotal}</div>
+-                        </div>
+-                        <div className="rounded-2xl bg-slate-800/50 p-3 border border-slate-700/50 text-center">
+-                          <div className="text-slate-500 text-xs mb-1">Browser Cache</div>
+-                          <div className="text-lg font-bold text-cyan-400">{mantenimiento.browserProfile.tamaño}</div>
+-                          <div className="text-xs text-slate-600">{mantenimiento.browserProfile.cacheLimpiable} limpiable</div>
+-                        </div>
+-                        <div className="rounded-2xl bg-slate-800/50 p-3 border border-slate-700/50 text-center">
+-                          <div className="text-slate-500 text-xs mb-1">App Support</div>
+-                          <div className="text-lg font-bold text-amber-400">{mantenimiento.appSupport.tamaño}</div>
+-                          <div className="text-xs text-slate-600">Antigravity data</div>
+-                        </div>
+-                      </div>
+-                    )}
+-
+-                    {/* Botones de acción */}
+-                    <div className="grid md:grid-cols-2 gap-3">
+-                      <Button
+-                        onClick={limpiarExtensiones}
+-                        disabled={limpiandoExtensiones || !isElectron || (mantenimiento?.extensiones.innecesarias ?? 0) === 0}
+-                        className="rounded-2xl h-20 justify-start text-left bg-violet-600/15 hover:bg-violet-600/25 text-violet-300 border border-violet-500/30"
+-                      >
+-                        {limpiandoExtensiones ? (
+-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+-                        ) : (
+-                          <Trash2 className="w-5 h-5 mr-2" />
+-                        )}
+-                        <div>
+-                          <div className="font-medium">{limpiandoExtensiones ? "Limpiando..." : "Limpiar Extensiones"}</div>
+-                          <div className="text-xs text-violet-400/60 mt-0.5">
+-                            {mantenimiento ? `${mantenimiento.extensiones.innecesarias} innecesarias (${mantenimiento.extensiones.tamañoInnecesarias})` : 'Escaneando...'}
+-                          </div>
+-                        </div>
+-                      </Button>
+-                      <Button
+-                        onClick={limpiarBrowserCache}
+-                        disabled={limpiandoCache || !isElectron || (mantenimiento?.browserProfile.cacheLimpiableBytes ?? 0) === 0}
+-                        className="rounded-2xl h-20 justify-start text-left bg-cyan-600/15 hover:bg-cyan-600/25 text-cyan-300 border border-cyan-500/30"
+-                      >
+-                        {limpiandoCache ? (
+-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+-                        ) : (
+-                          <Globe className="w-5 h-5 mr-2" />
+-                        )}
+-                        <div>
+-                          <div className="font-medium">{limpiandoCache ? "Limpiando..." : "Limpiar Cache Browser"}</div>
+-                          <div className="text-xs text-cyan-400/60 mt-0.5">
+-                            {mantenimiento ? `${mantenimiento.browserProfile.cacheLimpiable} en cache` : 'Escaneando...'}
+-                          </div>
+-                        </div>
+-                      </Button>
+-                    </div>
+-
+-                    {/* Mensaje resultado */}
+-                    <AnimatePresence>
+-                      {mensajeMantenimiento && (
+-                        <motion.div
+-                          initial={{ opacity: 0, y: -8 }}
+-                          animate={{ opacity: 1, y: 0 }}
+-                          exit={{ opacity: 0 }}
+-                        >
+-                          <div className={`rounded-2xl p-4 text-sm ${
+-                            mensajeMantenimiento.includes('Error')
+-                              ? 'bg-red-500/10 text-red-400 border border-red-500/30'
+-                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+-                          }`}>
+-                            {mensajeMantenimiento}
+-                          </div>
+-                        </motion.div>
+-                      )}
+-                    </AnimatePresence>
+-
+-                    {/* Lista de extensiones innecesarias */}
+-                    {mantenimiento && mantenimiento.extensiones.innecesarias > 0 && (
+-                      <details className="text-xs text-slate-600">
+-                        <summary className="cursor-pointer hover:text-slate-400 transition-colors">
+-                          Ver {mantenimiento.extensiones.innecesarias} extensiones innecesarias
+-                        </summary>
+-                        <div className="mt-2 space-y-1 pl-3 border-l border-slate-700/50">
+-                          {mantenimiento.extensiones.listaInnecesarias.map((ext) => (
+-                            <div key={ext.nombre} className="flex justify-between">
+-                              <span className="text-slate-500 truncate">{ext.nombre}</span>
+-                              <span className="text-slate-600 ml-2 flex-shrink-0">{ext.tamaño}</span>
+-                            </div>
+-                          ))}
+-                        </div>
+-                      </details>
+-                    )}
+-                  </CardContent>
+-                </Card>
+-
+-                {/* ── ANTIGRAVITY IDE — LIMPIEZA NUCLEAR ── */}
+-                <Card className="rounded-3xl glass-card border-0">
+-                  <CardHeader>
+-                    <CardTitle className="flex items-center gap-2 text-slate-200">
+-                      <Terminal className="w-5 h-5 text-rose-400" /> Antigravity IDE — Limpieza
+-                    </CardTitle>
+-                    <CardDescription className="text-slate-500">
+-                      Limpia cache del IDE, detecta procesos zombie y gestiona extensiones instaladas.
+-                    </CardDescription>
+-                  </CardHeader>
+-                  <CardContent className="space-y-4">
+-                    <div className="grid md:grid-cols-2 gap-3">
+-                      {/* Limpiar cache IDE */}
+-                      <Button
++                  {isElectron && (
++                    <div className="flex flex-wrap gap-2 pt-2">
++                      <button className="btn-primary text-xs"
+                         onClick={async () => {
+-                          if (!isElectron) return;
+-                          setMensajeMantenimiento(null);
+-                          try {
+-                            const r = await window.antigravity.cleanAntigravityCache();
+-                            setMensajeMantenimiento(r.mensaje);
+-                            const maint = await window.antigravity.getMaintenanceInfo();
+-                            setMantenimiento(maint);
+-                          } catch (e) { setMensajeMantenimiento(`Error: ${e}`); }
+-                        }}
+-                        disabled={!isElectron}
+-                        className="rounded-2xl h-20 justify-start text-left bg-rose-600/15 hover:bg-rose-600/25 text-rose-300 border border-rose-500/30"
+-                      >
+-                        <Trash2 className="w-5 h-5 mr-2 flex-shrink-0" />
+-                        <div>
+-                          <div className="font-medium">Limpiar Cache IDE</div>
+-                          <div className="text-xs text-rose-400/60 mt-0.5">Logs, Caches, SavedState</div>
+-                        </div>
+-                      </Button>
+-
+-                      {/* Detectar procesos zombie */}
+-                      <Button
++                          const r = await window.antigravity.openConversation(sesionSeleccionada.id);
++                          feedback("ok", r.mensaje);
++                        }}>
++                        <Code2 className="w-3.5 h-3.5" /> Abrir en Antigravity
++                      </button>
++                      <button className="btn-ghost text-xs"
+                         onClick={async () => {
+-                          if (!isElectron) return;
+-                          setMensajeMantenimiento(null);
+-                          try {
+-                            const r = await window.antigravity.killZombieProcesses();
+-                            setMensajeMantenimiento(r.mensaje);
+-                          } catch (e) { setMensajeMantenimiento(`Error: ${e}`); }
+-                        }}
+-                        disabled={!isElectron}
+-                        className="rounded-2xl h-20 justify-start text-left bg-amber-600/15 hover:bg-amber-600/25 text-amber-300 border border-amber-500/30"
+-                      >
+-                        <Activity className="w-5 h-5 mr-2 flex-shrink-0" />
+-                        <div>
+-                          <div className="font-medium">Procesos Zombie</div>
+-                          <div className="text-xs text-amber-400/60 mt-0.5">Detectar procesos huérfanos</div>
+-                        </div>
+-                      </Button>
+-                    </div>
+-
+-                    {/* Listar extensiones - full width */}
+-                    <Button
+-                      onClick={async () => {
+-                        if (!isElectron) return;
+-                        setMensajeMantenimiento(null);
+-                        try {
+-                          const r = await window.antigravity.listExtensions();
+-                          const list = r.extensiones.map(e => `${e.esencial ? '✅' : '❌'} ${e.id} (${e.tamaño})`).join('\n');
+-                          setMensajeMantenimiento(
+-                            `${r.total} extensiones: ${r.esenciales} esenciales, ${r.innecesarias} innecesarias\n${list}`
+-                          );
+-                        } catch (e) { setMensajeMantenimiento(`Error: ${e}`); }
+-                      }}
+-                      disabled={!isElectron}
+-                      className="w-full rounded-2xl h-14 justify-start text-left bg-violet-600/15 hover:bg-violet-600/25 text-violet-300 border border-violet-500/30"
+-                    >
+-                      <Code2 className="w-5 h-5 mr-2 flex-shrink-0" />
+-                      <div>
+-                        <div className="font-medium">Listar Extensiones Instaladas</div>
+-                        <div className="text-xs text-violet-400/60">Ver cuáles son esenciales y cuáles se pueden borrar</div>
+-                      </div>
+-                    </Button>
+-                  </CardContent>
+-                </Card>
+-              </div>
+-            </motion.div>
+-          </TabsContent>
+-
+-          {/* ───── CONOCIMIENTO ───── */}
+-          <TabsContent value="conocimiento">
+-            <motion.div {...animEntrada} className="grid xl:grid-cols-[1.2fr_0.8fr] gap-6">
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Brain className="w-5 h-5 text-rose-400" />
+-                    Base de Conocimiento
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    {knowledgeItems.length > 0
+-                      ? `${knowledgeItems.length} Knowledge Items — Antigravity los lee en cada conversación.`
+-                      : "Crea KIs aquí y Antigravity los usará automáticamente."
+-                    }
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent>
+-                  <ScrollArea className="h-[420px] rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6">
+-                    <div className="space-y-5 text-sm leading-7">
+-                      {knowledgeItems.map((ki) => (
+-                        <motion.div key={ki.id} whileHover={{ x: 3 }} className="interactive-hover group">
+-                          <div className="flex items-start justify-between gap-2">
+-                            <div className="font-semibold text-slate-200 flex items-center gap-2 mb-1">
+-                              <BookOpen className="w-4 h-4 text-rose-400" />
+-                              {ki.titulo}
+-                            </div>
+-                            {isElectron && (
+-                              <Button
+-                                variant="ghost"
+-                                size="sm"
+-                                className="opacity-0 group-hover:opacity-100 text-rose-400 hover:text-rose-300 h-6 w-6 p-0"
+-                                onClick={async () => {
+-                                  await window.antigravity.deleteKI(ki.id);
+-                                  const fresh = await window.antigravity.getKnowledge();
+-                                  setKnowledgeItems(fresh);
+-                                }}
+-                              >
+-                                <Trash2 className="w-3.5 h-3.5" />
+-                              </Button>
+-                            )}
+-                          </div>
+-                          <div className="text-slate-400 pl-6">{ki.resumen}</div>
+-                          {ki.artefactos.length > 0 && (
+-                            <div className="pl-6 mt-1 space-y-1">
+-                              {ki.artefactos.map((a) => (
+-                                <div key={a.nombre} className="text-xs text-slate-500 flex items-center gap-1.5">
+-                                  <FileText className="w-3 h-3" /> {a.nombre} ({a.tamaño})
+-                                </div>
+-                              ))}
+-                            </div>
+-                          )}
+-                        </motion.div>
+-                      ))}
+-
+-                      <Separator className="bg-slate-700/50" />
+-                      <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Reglas Operativas</div>
+-                      {[
+-                        { titulo: "Regla operativa", contenido: "Antigravity es un motor de ejecución, no la memoria del sistema. Antigravity Brain es tu memoria permanente." },
+-                        { titulo: "Política de sesiones", contenido: "Una tarea acotada por sesión. Traspaso obligatorio antes de archivar. Nunca reabrir chats largos rotos como dependencia." },
+-                        { titulo: "Estado en vivo", contenido: `${salud?.totalConversaciones ?? 0} conversaciones · ${salud?.totalArtefactos ?? 0} artefactos · ${salud?.tamañoTotal ?? "0"} en disco · Autopilot ${modoAuto ? "activo ✅" : "inactivo"}` },
+-                      ].map((item, i) => (
+-                        <motion.div key={`rule-${i}`} whileHover={{ x: 3 }} className="interactive-hover">
+-                          <div className="font-semibold text-slate-200 flex items-center gap-2 mb-1">
+-                            <BookOpen className="w-4 h-4 text-rose-400" />
+-                            {item.titulo}
+-                          </div>
+-                          <div className="text-slate-400 pl-6">{item.contenido}</div>
+-                        </motion.div>
+-                      ))}
++                          const r = await window.antigravity.generateKIFromSession(sesionSeleccionada.id);
++                          feedback(r.exito ? "ok" : "err", r.mensaje);
++                          setKnowledgeItems(await window.antigravity.getKnowledge());
++                        }}>
++                        <Brain className="w-3.5 h-3.5" /> Guardar como KI
++                      </button>
++                      <button className="btn-ghost text-xs"
++                        onClick={() => { const a = artefactosSesion[0]; if (a) window.antigravity.openInFinder(a.ruta); }}>
++                        <ExternalLink className="w-3.5 h-3.5" /> Finder
++                      </button>
+                     </div>
+-                  </ScrollArea>
+-                </CardContent>
+-              </Card>
++                  )}
++                </div>
++              )}
++            </div>
++          </ScrollArea>
++        </div>
++      </motion.div>
++    );
++  }
+ 
+-              {/* CREADOR DE KI */}
+-              <Card className="rounded-3xl glass-card border-0 glow-border">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Sparkles className="w-5 h-5 text-amber-400" />
+-                    Crear Knowledge Item
+-                  </CardTitle>
+-                  <CardDescription className="text-slate-500">
+-                    Escribe aquí lo que Antigravity debe recordar en cada conversación futura.
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent className="space-y-4">
+-                  <Input
+-                    id="ki-titulo"
+-                    placeholder="Título del conocimiento..."
+-                    className="rounded-xl bg-slate-800/60 border-slate-700"
+-                  />
+-                  <Input
+-                    id="ki-resumen"
+-                    placeholder="Resumen corto (Antigravity lo ve siempre)..."
+-                    className="rounded-xl bg-slate-800/60 border-slate-700"
+-                  />
+-                  <Textarea
+-                    id="ki-contenido"
+-                    placeholder="Contenido detallado (contexto, reglas, arquitectura...)..."
+-                    rows={6}
+-                    className="rounded-xl bg-slate-800/60 border-slate-700 resize-none"
+-                  />
+-                  <Button
+-                    className="w-full rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white font-medium"
+-                    disabled={!isElectron}
+-                    onClick={async () => {
+-                      const titulo = (document.getElementById('ki-titulo') as HTMLInputElement)?.value;
+-                      const resumen = (document.getElementById('ki-resumen') as HTMLInputElement)?.value;
+-                      const contenido = (document.getElementById('ki-contenido') as HTMLTextAreaElement)?.value;
+-                      if (!titulo || !resumen) return;
+-                      const result = await window.antigravity.createKI({ titulo, resumen, contenido });
+-                      if (result.exito) {
+-                        const fresh = await window.antigravity.getKnowledge();
+-                        setKnowledgeItems(fresh);
+-                        (document.getElementById('ki-titulo') as HTMLInputElement).value = '';
+-                        (document.getElementById('ki-resumen') as HTMLInputElement).value = '';
+-                        (document.getElementById('ki-contenido') as HTMLTextAreaElement).value = '';
+-                      }
+-                      setMensajeApertura(result.mensaje);
+-                      setTimeout(() => setMensajeApertura(null), 4000);
+-                    }}
+-                  >
+-                    <Brain className="w-4 h-4 mr-1.5" /> Guardar en Antigravity
+-                  </Button>
+-                  <div className="text-xs text-slate-600 text-center">
+-                    Se guarda en ~/.gemini/antigravity/knowledge/ — Antigravity lo leerá automáticamente
++  function renderPrompts() {
++    const badgeMap: Record<string, string> = {
++      'Producción': 'chip-green', 'Debug': 'chip-amber', 'DevOps': 'chip-blue',
++      'Infra': 'chip-purple', 'Arquitectura': 'chip-neon', 'APIs': 'chip-neon',
++      'Database': 'chip-amber', 'Handoff': 'chip-blue', 'Urgente': 'chip-pink',
++      'Setup': 'chip-purple',
++    };
++    return (
++      <motion.div {...animFade} className="grid xl:grid-cols-[260px_1fr] gap-4 h-full">
++        {/* Lista */}
++        <div className="panel flex flex-col overflow-hidden">
++          <div className="p-4 border-b border-[var(--border-default)]">
++            <div className="section-title text-sm">Biblioteca de Prompts</div>
++            <div className="section-sub">{bibliotecaPrompts.length} plantillas</div>
++          </div>
++          <ScrollArea className="flex-1">
++            <div className="p-2 space-y-0.5">
++              {bibliotecaPrompts.map(p => (
++                <button key={p.nombre} onClick={() => setPromptActivo(p)}
++                  className={`list-item w-full text-left ${promptActivo?.nombre === p.nombre ? 'selected' : ''}`}
++                >
++                  <div className="flex items-center justify-between gap-2">
++                    <span className="text-[13px] text-[var(--text-primary)] truncate">{p.nombre}</span>
++                    <span className={`chip ${badgeMap[p.etiqueta] || 'chip-slate'} flex-shrink-0`}>{p.etiqueta}</span>
+                   </div>
+-                </CardContent>
+-              </Card>
+-            </motion.div>
+-          </TabsContent>
+-
+-          {/* ───── INFO ───── */}
+-          <TabsContent value="info">
+-            <motion.div {...animEntrada} className="grid xl:grid-cols-2 gap-6">
+-              {/* QUÉ ES */}
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Sparkles className="w-5 h-5 text-violet-400" />
+-                    ¿Qué es Antigravity Brain?
+-                  </CardTitle>
+-                </CardHeader>
+-                <CardContent>
+-                  <ScrollArea className="h-[400px] rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6">
+-                    <div className="space-y-5 text-sm leading-7 text-slate-300">
+-                      <div>
+-                        <div className="font-semibold text-slate-200 flex items-center gap-2 mb-2">
+-                          <Brain className="w-4 h-4 text-violet-400" /> Memoria permanente para Antigravity
+-                        </div>
+-                        <p>Antigravity Brain es un compañero de escritorio que le da <span className="text-violet-400 font-medium">memoria permanente</span> a tu IA. Sin él, Antigravity empieza cada conversación sin saber nada de ti. Con Antigravity Brain, recuerda tus proyectos, decisiones y código anterior.</p>
+-                      </div>
+-                      <Separator className="bg-slate-700/50" />
+-                      <div>
+-                        <div className="font-semibold text-slate-200 flex items-center gap-2 mb-2">
+-                          <Zap className="w-4 h-4 text-amber-400" /> Ahorro de tokens
+-                        </div>
+-                        <p>Cada Knowledge Item que creas evita que tengas que re-explicar contexto en conversaciones futuras. Esto ahorra entre un <span className="text-emerald-400 font-medium">30-50% de tokens</span> por conversación — menos repetir = menos pagar.</p>
+-                      </div>
+-                      <Separator className="bg-slate-700/50" />
+-                      <div>
+-                        <div className="font-semibold text-slate-200 flex items-center gap-2 mb-2">
+-                          <RefreshCw className="w-4 h-4 text-cyan-400" /> Autopilot
+-                        </div>
+-                        <p>Al arrancar, Antigravity Brain activa su modo Autopilot que cada 5 minutos:</p>
+-                        <ul className="list-disc pl-6 mt-2 space-y-1 text-slate-400">
+-                          <li>Escanea tus sesiones activas</li>
+-                          <li>Limpia archivos basura (.resolved) automáticamente</li>
+-                          <li>Verifica la integridad de tus datos</li>
+-                          <li>Genera Knowledge Items de sesiones con artefactos</li>
+-                          <li>Reporta el estado en tiempo real en los logs</li>
+-                        </ul>
+-                      </div>
+-                      <Separator className="bg-slate-700/50" />
+-                      <div>
+-                        <div className="font-semibold text-slate-200 flex items-center gap-2 mb-2">
+-                          <Shield className="w-4 h-4 text-emerald-400" /> 100% Local
+-                        </div>
+-                        <p>Antigravity Brain no envía ningún dato a internet. Todo se lee y escribe en tu disco duro local en <code className="text-xs bg-slate-700/50 px-1.5 py-0.5 rounded">~/.gemini/antigravity/</code>. Tus datos nunca salen de tu Mac.</p>
+-                      </div>
+-                    </div>
+-                  </ScrollArea>
+-                </CardContent>
+-              </Card>
+-
+-              {/* CÓMO ESTÁ HECHO */}
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Code2 className="w-5 h-5 text-cyan-400" />
+-                    Stack Tecnológico
+-                  </CardTitle>
+-                </CardHeader>
+-                <CardContent>
+-                  <ScrollArea className="h-[400px] rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6">
+-                    <div className="space-y-4 text-sm leading-7 text-slate-300">
+-                      {[
+-                        { label: "Framework", value: "Electron 41", desc: "App nativa de escritorio para macOS" },
+-                        { label: "Frontend", value: "React 19 + TypeScript", desc: "UI reactiva con tipado estricto" },
+-                        { label: "Estilos", value: "Tailwind CSS 4 + Radix UI", desc: "Componentes accesibles con diseño premium" },
+-                        { label: "Animaciones", value: "Framer Motion", desc: "Transiciones fluidas y micro-animaciones" },
+-                        { label: "Build", value: "Vite 8 + electron-builder", desc: "Compilación rápida, empaquetado como .dmg" },
+-                        { label: "Comunicación", value: "IPC (Inter-Process)", desc: "Bridge seguro entre UI y sistema de archivos" },
+-                        { label: "Datos", value: "Filesystem local", desc: "Lee/escribe directamente en ~/.gemini/antigravity/" },
+-                      ].map((item, i) => (
+-                        <div key={i} className="rounded-2xl border border-slate-700/50 p-4 bg-slate-800/30">
+-                          <div className="flex items-center justify-between">
+-                            <span className="font-medium text-slate-200">{item.label}</span>
+-                            <Badge className="rounded-full bg-violet-500/15 text-violet-300 border-violet-500/30">{item.value}</Badge>
+-                          </div>
+-                          <div className="text-xs text-slate-500 mt-1">{item.desc}</div>
+-                        </div>
+-                      ))}
+-                    </div>
+-                  </ScrollArea>
+-                </CardContent>
+-              </Card>
+-
+-              {/* CÓMO SE CONECTA */}
+-              <Card className="rounded-3xl glass-card border-0 glow-border">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <Activity className="w-5 h-5 text-emerald-400" />
+-                    ¿Cómo se conecta con Antigravity?
+-                  </CardTitle>
+-                </CardHeader>
+-                <CardContent>
+-                  <div className="space-y-4 text-sm leading-7 text-slate-300">
+-                    <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+-                      <div className="font-medium text-emerald-400 mb-2">✅ Estado actual</div>
+-                      <div className="font-mono text-xs text-slate-400 space-y-1">
+-                        <div>Conectado: <span className="text-emerald-400">{isElectron ? "Sí" : "No (modo web)"}</span></div>
+-                        <div>Ruta: <span className="text-slate-300">{salud?.basePath ?? "~/.gemini/antigravity/"}</span></div>
+-                        <div>Sesiones leídas: <span className="text-slate-300">{sesiones.length}</span></div>
+-                        <div>Knowledge Items: <span className="text-slate-300">{knowledgeItems.length}</span></div>
+-                        <div>Tokens estimados: <span className="text-amber-400">~{formatTokens(tokensEstimados)}</span></div>
+-                        <div>Autopilot: <span className={modoAuto ? "text-emerald-400" : "text-slate-500"}>{modoAuto ? "Activo" : "Inactivo"}</span></div>
+-                      </div>
+-                    </div>
+-                    <div>
+-                      <div className="font-semibold text-slate-200 mb-2">El flujo es:</div>
+-                      <ol className="list-decimal pl-6 space-y-2 text-slate-400">
+-                        <li>Antigravity Brain lee tus <span className="text-slate-200">sesiones</span> de <code className="text-xs bg-slate-700/50 px-1 rounded">brain/</code> e <code className="text-xs bg-slate-700/50 px-1 rounded">implicit/</code></li>
+-                        <li>Extrae artefactos (walkthroughs, planes, tareas) y los convierte en <span className="text-violet-400">Knowledge Items</span></li>
+-                        <li>Los escribe en <code className="text-xs bg-slate-700/50 px-1 rounded">~/.gemini/antigravity/knowledge/</code></li>
+-                        <li>Antigravity <span className="text-emerald-400">lee automáticamente</span> esos KIs al iniciar cada conversación nueva</li>
+-                        <li>Resultado: la IA ya tiene contexto → menos tokens → mejores respuestas</li>
+-                      </ol>
+-                    </div>
+-                    <Separator className="bg-slate-700/50" />
+-                    <div>
+-                      <div className="font-semibold text-slate-200 mb-2">¿Cómo verifico que funciona?</div>
+-                      <ol className="list-decimal pl-6 space-y-2 text-slate-400">
+-                        <li>Mira arriba: si dice <span className="text-emerald-400">"Conectado"</span> está funcionando</li>
+-                        <li>Ve a la pestaña <span className="text-violet-400">Conocimiento</span> — deberías ver Knowledge Items</li>
+-                        <li>En una conversación nueva de Antigravity, pregúntale: <span className="text-slate-200 italic">"¿Qué Knowledge Items tienes?"</span></li>
+-                        <li>Si responde con tus KIs, <span className="text-emerald-400">la conexión es real</span></li>
+-                      </ol>
+-                    </div>
++                  <div className="text-[11px] text-[var(--text-tertiary)] mt-1 truncate font-mono">
++                    {p.contenido.substring(0, 55)}…
+                   </div>
+-                </CardContent>
+-              </Card>
++                </button>
++              ))}
++            </div>
++          </ScrollArea>
++        </div>
++
++        {/* Editor */}
++        <div className="panel flex flex-col overflow-hidden">
++          <div className="p-4 border-b border-[var(--border-default)] flex items-center justify-between">
++            <div>
++              <div className="section-title">{promptActivo?.nombre}</div>
++              <div className="section-sub font-mono">{promptActivo?.contenido.length} chars</div>
++            </div>
++            <div className="flex gap-2">
++              <button className="btn-ghost text-xs" onClick={() => navigator.clipboard.writeText(promptActivo?.contenido || '')}>
++                <Copy className="w-3.5 h-3.5" /> Copiar
++              </button>
++            </div>
++          </div>
++          <div className="flex-1 p-3 overflow-hidden">
++            <textarea
++              value={promptActivo?.contenido || ''}
++              onChange={e => setPromptActivo({ ...promptActivo!, contenido: e.target.value })}
++              className="w-full h-full resize-none bg-[rgba(0,0,0,0.3)] border border-[var(--border-default)] rounded-xl p-4 font-mono text-[12px] text-[var(--text-secondary)] leading-relaxed focus:border-[rgba(0,255,200,0.3)] focus:outline-none transition-colors"
++              style={{ fontFamily: 'var(--font-mono)' }}
++            />
++          </div>
++        </div>
++      </motion.div>
++    );
++  }
+ 
+-              {/* FEATURES */}
+-              <Card className="rounded-3xl glass-card border-0">
+-                <CardHeader>
+-                  <CardTitle className="flex items-center gap-2 text-slate-200">
+-                    <CheckCircle2 className="w-5 h-5 text-violet-400" />
+-                    Funcionalidades
+-                  </CardTitle>
+-                </CardHeader>
+-                <CardContent>
+-                  <div className="space-y-3 text-sm">
+-                    {[
+-                      { icon: Eye, text: "Panel de sesiones con tokens estimados por conversación", color: "text-cyan-400" },
+-                      { icon: Brain, text: "Creador de Knowledge Items — inyecta memoria en Antigravity", color: "text-violet-400" },
+-                      { icon: Zap, text: "Auto-generación de KIs desde sesiones con artefactos", color: "text-amber-400" },
+-                      { icon: Trash2, text: "Limpieza automática de archivos .resolved", color: "text-rose-400" },
+-                      { icon: ShieldCheck, text: "Verificación de integridad de datos", color: "text-emerald-400" },
+-                      { icon: Code2, text: "Abrir sesiones en VS Code con un clic", color: "text-cyan-400" },
+-                      { icon: FolderOpen, text: "Navegador de artefactos con preview", color: "text-violet-400" },
+-                      { icon: Archive, text: "Respaldos ZIP del directorio completo", color: "text-amber-400" },
+-                      { icon: HardDrive, text: "Métricas en tiempo real de espacio en disco", color: "text-slate-400" },
+-                      { icon: RefreshCw, text: "Autopilot: todo funciona sin tocar nada", color: "text-emerald-400" },
+-                    ].map((f, i) => (
+-                      <motion.div key={i} whileHover={{ x: 3 }} className="flex items-center gap-3 rounded-2xl border border-slate-700/50 p-3 bg-slate-800/30 interactive-hover">
+-                        <f.icon className={`w-4 h-4 ${f.color} flex-shrink-0`} />
+-                        <span className="text-slate-300">{f.text}</span>
+-                      </motion.div>
+-                    ))}
++  function renderSalidas() {
++    const iconTipo = (tipo: string) => {
++      switch (tipo) {
++        case "documento": return <FileText className="w-4 h-4 text-violet-400" />;
++        case "imagen": return <Image className="w-4 h-4 text-cyan-400" />;
++        case "grabación": return <Film className="w-4 h-4 text-rose-400" />;
++        case "datos": return <FileCode className="w-4 h-4 text-amber-400" />;
++        default: return <FileText className="w-4 h-4 text-slate-400" />;
++      }
++    };
++    return (
++      <motion.div {...animFade} className="grid xl:grid-cols-[1fr_340px] gap-4 h-full">
++        <div className="panel flex flex-col overflow-hidden">
++          <div className="p-5 border-b border-[var(--border-default)]">
++            <div className="section-title flex items-center gap-2">
++              <Database className="w-4 h-4 text-violet-400" /> Bóveda de Salidas
++            </div>
++            <div className="section-sub">{archivosSalida.length} archivos encontrados</div>
++          </div>
++          <div className="p-3 border-b border-[var(--border-default)]">
++            <div className="relative">
++              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
++              <input
++                type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)}
++                placeholder="Buscar archivos..."
++                className="w-full pl-9 pr-3 py-2 bg-[var(--surface-3)] border border-[var(--border-default)] rounded-lg text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[rgba(0,255,200,0.3)] focus:outline-none transition-colors"
++              />
++            </div>
++          </div>
++          <ScrollArea className="flex-1">
++            <div className="p-3 space-y-1">
++              {archivosFiltrados.map((o, i) => (
++                <button key={`${o.sesionId}-${i}`}
++                  onClick={() => isElectron && window.antigravity.openInFinder(o.ruta)}
++                  className="list-item w-full text-left"
++                >
++                  <div className="flex items-center gap-3">
++                    {iconTipo(o.tipo)}
++                    <div className="min-w-0 flex-1">
++                      <div className="text-[13px] text-[var(--text-primary)] truncate">{o.titulo}</div>
++                      <div className="text-[11px] text-[var(--text-tertiary)] mt-0.5">{o.tipo} · {o.tamaño} · {tiempoRelativo(o.fechaModificacion)}</div>
++                    </div>
++                    {o.sincronizado
++                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
++                      : <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
++                    }
+                   </div>
+-                </CardContent>
+-              </Card>
+-            </motion.div>
+-          </TabsContent>
+-
+-          {/* ───── APIs ───── */}
+-          <TabsContent value="apis" className="space-y-6">
+-            <div className="flex items-center justify-between">
+-              <h2 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
+-                <Key className="w-5 h-5 text-amber-400" /> APIs & Servicios ({apis.length})
+-              </h2>
+-              <Button size="sm" onClick={() => {
+-                setEditingApi(null);
+-                setApiForm({ id: `api-${Date.now()}`, nombre: '', tipo: '', apiKey: '', saldo: 0, limiteAlerta: 10, color: 'cyan', proyectos: [], notas: [], url: '' });
+-                setShowApiForm(true);
+-              }} className="rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30">
+-                <Plus className="w-4 h-4 mr-1" /> Añadir API
+-              </Button>
++                </button>
++              ))}
+             </div>
++          </ScrollArea>
++        </div>
++        {/* Reglas */}
++        <div className="panel flex flex-col overflow-hidden">
++          <div className="p-5 border-b border-[var(--border-default)]">
++            <div className="section-title">Reglas de Exportación</div>
++            <div className="section-sub">Disciplina mínima de gestión</div>
++          </div>
++          <div className="p-4 space-y-2 flex-1">
++            {[
++              "Cada prompt terminado se convierte en un archivo versionado.",
++              "Cada respuesta útil se convierte en una nota de traspaso o código.",
++              "Nunca confíes en un hilo largo de Antigravity como fuente de verdad.",
++              "Usa una sola sesión por tarea acotada.",
++            ].map((r, i) => (
++              <div key={i} className="surface p-4">
++                <span className="text-[var(--neon)] font-bold font-mono mr-2 text-[12px]">0{i + 1}</span>
++                <span className="text-[13px] text-[var(--text-secondary)]">{r}</span>
++              </div>
++            ))}
++          </div>
++        </div>
++      </motion.div>
++    );
++  }
+ 
+-            {/* Alertas de saldo bajo */}
+-            {apis.filter(a => a.limiteAlerta > 0 && a.saldo > 0 && a.saldo <= a.limiteAlerta).length > 0 && (
+-              <div className="rounded-2xl bg-rose-500/10 border border-rose-500/30 p-4 space-y-2">
+-                <div className="text-sm font-medium text-rose-300 flex items-center gap-2">
+-                  <AlertTriangle className="w-4 h-4" /> ⚠️ Alertas de saldo
++  function renderReparar() {
++    return (
++      <motion.div {...animFade} className="grid xl:grid-cols-2 gap-4">
++        {/* Acciones */}
++        <div className="panel">
++          <div className="p-5 border-b border-[var(--border-default)]">
++            <div className="section-title flex items-center gap-2">
++              <Wrench className="w-4 h-4 text-amber-400" /> Centro de Reparación
++            </div>
++            <div className="section-sub">
++              Acciones sobre tu instalación de Antigravity
++              {salud && salud.conversacionesGrandes > 0 && (
++                <span className="text-amber-400 ml-2">· {salud.conversacionesGrandes} conv. grandes (&gt;3MB)</span>
++              )}
++            </div>
++          </div>
++          <div className="p-4 grid grid-cols-2 gap-3">
++            <button className="action-btn" disabled={respaldando || !isElectron}
++              style={{ borderColor: 'rgba(52,211,153,0.2)' }}
++              onClick={async () => {
++                setRespaldando(true);
++                try { const r = await window.antigravity.createBackup(); feedback("ok", r.mensaje); } catch (e) { feedback("err", `${e}`); }
++                setRespaldando(false);
++              }}>
++              {respaldando ? <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" /> : <Archive className="w-4 h-4 text-emerald-400" />}
++              <div>
++                <div className="text-[13px] font-medium text-emerald-300">{respaldando ? "Creando..." : "Crear Respaldo"}</div>
++                <div className="text-[11px] text-[var(--text-tertiary)]">ZIP en ~/Desktop/</div>
++              </div>
++            </button>
++            <button className="action-btn" onClick={() => isElectron && salud?.basePath && window.antigravity.openInFinder(salud.basePath)}>
++              <FolderOpen className="w-4 h-4 text-slate-400" />
++              <div>
++                <div className="text-[13px] font-medium text-[var(--text-primary)]">Abrir Finder</div>
++                <div className="text-[11px] text-[var(--text-tertiary)]">~/.gemini/antigravity/</div>
++              </div>
++            </button>
++            <button className="action-btn" disabled={limpiando || !isElectron}
++              style={{ borderColor: 'rgba(255,214,10,0.15)' }}
++              onClick={async () => {
++                setLimpiando(true);
++                try {
++                  const r = await window.antigravity.cleanResolved();
++                  feedback("ok", r.mensaje);
++                  setSalud(await window.antigravity.getSystemHealth());
++                } catch (e) { feedback("err", `${e}`); }
++                setLimpiando(false);
++              }}>
++              {limpiando ? <Loader2 className="w-4 h-4 text-amber-400 animate-spin" /> : <Trash2 className="w-4 h-4 text-amber-400" />}
++              <div>
++                <div className="text-[13px] font-medium text-amber-300">{limpiando ? "Limpiando..." : "Limpiar .resolved"}</div>
++                <div className="text-[11px] text-[var(--text-tertiary)]">{salud?.totalResolved ?? 0} archivos</div>
++              </div>
++            </button>
++            <button className="action-btn" disabled={verificando || !isElectron}
++              onClick={async () => {
++                setVerificando(true);
++                try { setResultadoIntegridad(await window.antigravity.verifyIntegrity()); } catch {}
++                setVerificando(false);
++              }}>
++              {verificando ? <Loader2 className="w-4 h-4 text-slate-400 animate-spin" /> : <ShieldCheck className="w-4 h-4 text-slate-400" />}
++              <div>
++                <div className="text-[13px] font-medium text-[var(--text-primary)]">{verificando ? "Verificando..." : "Verificar Integridad"}</div>
++                <div className="text-[11px] text-[var(--text-tertiary)]">Coherencia de datos</div>
++              </div>
++            </button>
++          </div>
++
++          {/* Resultado integridad */}
++          <AnimatePresence>
++            {resultadoIntegridad && (
++              <motion.div {...animFade} className="px-4 pb-4">
++                <div className={`p-4 rounded-xl border text-[13px] flex items-start justify-between gap-3 ${
++                  (resultadoIntegridad.archivosCorruptos.length + resultadoIntegridad.artefactosSinMetadata.length) > 0
++                    ? 'bg-amber-500/8 border-amber-500/25 text-amber-300'
++                    : 'bg-emerald-500/8 border-emerald-500/25 text-emerald-300'
++                }`}>
++                  <div>
++                    <div className="font-medium">
++                      {(resultadoIntegridad.archivosCorruptos.length + resultadoIntegridad.artefactosSinMetadata.length) > 0
++                        ? `${resultadoIntegridad.archivosCorruptos.length + resultadoIntegridad.artefactosSinMetadata.length} problema(s) detectado(s)`
++                        : "Sin problemas de integridad"}
++                    </div>
++                    {resultadoIntegridad.archivosCorruptos.length > 0 && (
++                      <div className="text-[12px] opacity-70 mt-1">{resultadoIntegridad.archivosCorruptos.length} archivo(s) corrupto(s)</div>
++                    )}
++                  </div>
++                  <button onClick={() => setResultadoIntegridad(null)} className="text-current opacity-40 hover:opacity-80"><X className="w-4 h-4" /></button>
+                 </div>
+-                {apis.filter(a => a.limiteAlerta > 0 && a.saldo > 0 && a.saldo <= a.limiteAlerta).map(a => (
+-                  <div key={a.id} className="text-xs text-rose-400">
+-                    <span className="font-medium">{a.nombre}</span>: {a.saldo.toFixed(2)}€ restantes (límite: {a.limiteAlerta}€)
++              </motion.div>
++            )}
++          </AnimatePresence>
++
++          {/* Mantenimiento profundo */}
++          <div className="px-4 pb-4 space-y-3">
++            <div className="divider my-1" />
++            <div className="text-[12px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Mantenimiento Profundo</div>
++            {mantenimiento && (
++              <div className="grid grid-cols-3 gap-2">
++                {[
++                  { label: "Extensiones", val: String(mantenimiento.extensiones.total), sub: mantenimiento.extensiones.tamañoTotal, color: "text-violet-400" },
++                  { label: "Browser Cache", val: mantenimiento.browserProfile.tamaño, sub: `${mantenimiento.browserProfile.cacheLimpiable} limpiable`, color: "text-cyan-400" },
++                  { label: "App Support", val: mantenimiento.appSupport.tamaño, sub: "Antigravity data", color: "text-amber-400" },
++                ].map(x => (
++                  <div key={x.label} className="surface text-center p-3">
++                    <div className={`text-[16px] font-bold ${x.color} font-mono`}>{x.val}</div>
++                    <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{x.label}</div>
++                    <div className="text-[10px] text-[var(--text-tertiary)] opacity-60">{x.sub}</div>
+                   </div>
+                 ))}
+               </div>
+             )}
+-
+-            {/* Form */}
+-            <AnimatePresence>
+-              {showApiForm && (
+-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+-                  <Card className="rounded-3xl glass-card border-0 glow-border">
+-                    <CardHeader className="pb-3">
+-                      <div className="flex items-center justify-between">
+-                        <CardTitle className="text-base text-slate-100">{editingApi ? 'Editar API' : 'Nueva API'}</CardTitle>
+-                        <Button size="sm" variant="ghost" onClick={() => setShowApiForm(false)} className="text-slate-400"><X className="w-4 h-4" /></Button>
+-                      </div>
+-                    </CardHeader>
+-                    <CardContent className="space-y-4">
+-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+-                        <Input placeholder="Nombre (BrightData...)" value={apiForm.nombre} onChange={(e) => setApiForm({ ...apiForm, nombre: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <Input placeholder="Tipo (Proxy, LLM...)" value={apiForm.tipo} onChange={(e) => setApiForm({ ...apiForm, tipo: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <Input placeholder="URL dashboard" value={apiForm.url} onChange={(e) => setApiForm({ ...apiForm, url: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <select value={apiForm.color} onChange={(e) => setApiForm({ ...apiForm, color: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border border-slate-700/40 text-slate-200 text-sm px-3 py-2">
+-                          <option value="amber">🟡 Amber</option><option value="cyan">🔵 Cyan</option>
+-                          <option value="violet">🟣 Violet</option><option value="emerald">🟢 Emerald</option><option value="rose">🔴 Rose</option>
+-                        </select>
+-                      </div>
+-                      <div className="grid grid-cols-3 gap-3">
+-                        <Input placeholder="API Key" value={apiForm.apiKey} onChange={(e) => setApiForm({ ...apiForm, apiKey: e.target.value })} type="password"
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm font-mono" />
+-                        <Input placeholder="Saldo actual (€)" value={apiForm.saldo || ''} onChange={(e) => setApiForm({ ...apiForm, saldo: parseFloat(e.target.value) || 0 })} type="number"
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <Input placeholder="Alerta cuando < €" value={apiForm.limiteAlerta || ''} onChange={(e) => setApiForm({ ...apiForm, limiteAlerta: parseFloat(e.target.value) || 0 })} type="number"
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                      </div>
+-                      {/* Proyectos */}
+-                      <div className="space-y-2">
+-                        <div className="text-xs text-slate-500 font-medium">Proyectos ({apiForm.proyectos.length})</div>
+-                        {apiForm.proyectos.map((p, i) => (
+-                          <div key={i} className="flex items-center gap-2 text-sm">
+-                            <span className="text-slate-300">{p.proyecto}</span>
+-                            <span className="text-amber-400 text-xs">{p.consumoMensual.toFixed(2)}€/mes</span>
+-                            <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-rose-400 ml-auto"
+-                              onClick={() => setApiForm({ ...apiForm, proyectos: apiForm.proyectos.filter((_, j) => j !== i) })}><X className="w-3 h-3" /></Button>
+-                          </div>
+-                        ))}
+-                        <div className="flex gap-2">
+-                          <Input placeholder="Proyecto" value={newApiProject.proyecto} onChange={(e) => setNewApiProject({ ...newApiProject, proyecto: e.target.value })}
+-                            className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-xs h-8" />
+-                          <Input placeholder="€/mes" value={newApiProject.consumoMensual || ''} onChange={(e) => setNewApiProject({ ...newApiProject, consumoMensual: parseFloat(e.target.value) || 0 })} type="number"
+-                            className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-xs h-8 w-24" />
+-                          <Button size="sm" className="h-8 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+-                            onClick={() => { if (newApiProject.proyecto) { setApiForm({ ...apiForm, proyectos: [...apiForm.proyectos, { ...newApiProject }] }); setNewApiProject({ proyecto: '', consumoMensual: 0 }); } }}>
+-                            <Plus className="w-3 h-3" />
+-                          </Button>
+-                        </div>
+-                      </div>
+-                      <div className="flex gap-2 pt-2">
+-                        <Button className="rounded-xl bg-gradient-to-r from-amber-500/30 to-violet-500/30 text-white hover:from-amber-500/40 hover:to-violet-500/40"
+-                          onClick={async () => {
+-                            if (!apiForm.nombre) return;
+-                            await window.antigravity.saveApi(apiForm);
+-                            setApis(await window.antigravity.getApis());
+-                            setShowApiForm(false);
+-                          }}>{editingApi ? 'Guardar' : 'Añadir API'}</Button>
+-                        <Button variant="ghost" onClick={() => setShowApiForm(false)} className="rounded-xl text-slate-400">Cancelar</Button>
+-                      </div>
+-                    </CardContent>
+-                  </Card>
+-                </motion.div>
+-              )}
+-            </AnimatePresence>
+-
+-            {/* Grid de APIs */}
+-            <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-5">
+-              {apis.map((api) => {
+-                const colorMap: Record<string, string> = { amber: 'text-amber-400', cyan: 'text-cyan-400', violet: 'text-violet-400', emerald: 'text-emerald-400', rose: 'text-rose-400' };
+-                const bgMap: Record<string, string> = { amber: 'bg-amber-500/15 border-amber-500/30', cyan: 'bg-cyan-500/15 border-cyan-500/30', violet: 'bg-violet-500/15 border-violet-500/30', emerald: 'bg-emerald-500/15 border-emerald-500/30', rose: 'bg-rose-500/15 border-rose-500/30' };
+-                const iconColor = colorMap[api.color] || 'text-cyan-400';
+-                const totalConsumo = api.proyectos.reduce((acc, p) => acc + p.consumoMensual, 0);
+-                const saldoBajo = api.limiteAlerta > 0 && api.saldo > 0 && api.saldo <= api.limiteAlerta;
+-
+-                return (
+-                  <Card key={api.id} className={`rounded-3xl glass-card border-0 ${saldoBajo ? 'ring-1 ring-rose-500/40' : ''}`}>
+-                    <CardHeader className="pb-3">
+-                      <div className="flex items-center justify-between">
+-                        <CardTitle className="text-base flex items-center gap-2 text-slate-100">
+-                          <Key className={`w-4 h-4 ${iconColor}`} />{api.nombre}
+-                        </CardTitle>
+-                        <div className="flex items-center gap-1">
+-                          <Badge className={`rounded-full ${bgMap[api.color]} text-xs ${iconColor}`}>{api.tipo}</Badge>
+-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-slate-500 hover:text-slate-300"
+-                            onClick={() => { setEditingApi(api); setApiForm({ ...api }); setShowApiForm(true); }}>
+-                            <Pencil className="w-3.5 h-3.5" />
+-                          </Button>
+-                        </div>
+-                      </div>
+-                    </CardHeader>
+-                    <CardContent className="space-y-3">
+-                      {/* Saldo y alerta */}
+-                      <div className="grid grid-cols-2 gap-3">
+-                        <div className="rounded-xl bg-slate-900/60 border border-slate-700/40 p-3 text-center">
+-                          <div className={`text-xl font-bold ${saldoBajo ? 'text-rose-400' : 'text-emerald-400'}`}>
+-                            {api.saldo > 0 ? `${api.saldo.toFixed(2)}€` : '—'}
+-                          </div>
+-                          <div className="text-xs text-slate-500">Saldo</div>
+-                        </div>
+-                        <div className="rounded-xl bg-slate-900/60 border border-slate-700/40 p-3 text-center">
+-                          <div className={`text-xl font-bold ${iconColor}`}>{totalConsumo > 0 ? `${totalConsumo.toFixed(2)}€` : '—'}</div>
+-                          <div className="text-xs text-slate-500">Consumo/mes</div>
+-                        </div>
+-                      </div>
+-
+-                      {/* Proyectos */}
+-                      {api.proyectos.length > 0 && (
+-                        <div className="space-y-1.5">
+-                          {api.proyectos.map((p) => (
+-                            <div key={p.proyecto} className="flex items-center justify-between text-xs py-1 border-b border-slate-700/30 last:border-0">
+-                              <span className="text-slate-300">{p.proyecto}</span>
+-                              <span className={`font-mono ${iconColor}`}>{p.consumoMensual > 0 ? `${p.consumoMensual.toFixed(2)}€` : '—'}</span>
+-                            </div>
+-                          ))}
+-                        </div>
+-                      )}
+-
+-                      {/* API Key masked */}
+-                      {api.apiKey && (
+-                        <div className="rounded-xl bg-slate-900/60 border border-slate-700/40 p-2">
+-                          <code className="text-xs text-slate-500 font-mono">
+-                            {api.apiKey.substring(0, 8)}{'•'.repeat(Math.max(0, api.apiKey.length - 12))}{api.apiKey.slice(-4)}
+-                          </code>
+-                        </div>
+-                      )}
+-
+-                      {/* URL */}
+-                      {api.url && (
+-                        <a href="#" onClick={(e) => { e.preventDefault(); window.antigravity.openInFinder(api.url); }}
+-                          className={`text-xs ${iconColor} hover:underline flex items-center gap-1`}>
+-                          <ExternalLink className="w-3 h-3" /> Dashboard
+-                        </a>
+-                      )}
+-
+-                      {/* Notas */}
+-                      {api.notas.length > 0 && (
+-                        <div className="text-xs text-slate-500 space-y-0.5">
+-                          {api.notas.map((n, i) => <div key={i}>{n}</div>)}
+-                        </div>
+-                      )}
+-
+-                      {/* Delete */}
+-                      {confirmDeleteApi === api.id ? (
+-                        <div className="flex items-center gap-2">
+-                          <span className="text-xs text-rose-400">¿Seguro?</span>
+-                          <Button size="sm" className="h-6 rounded-lg bg-rose-500/20 text-rose-300 text-xs"
+-                            onClick={async () => { await window.antigravity.deleteApi(api.id); setApis(await window.antigravity.getApis()); setConfirmDeleteApi(null); }}>Sí</Button>
+-                          <Button size="sm" variant="ghost" className="h-6 text-xs text-slate-400" onClick={() => setConfirmDeleteApi(null)}>No</Button>
+-                        </div>
+-                      ) : (
+-                        <Button size="sm" variant="ghost" className="text-xs text-slate-600 hover:text-rose-400 p-0 h-auto"
+-                          onClick={() => setConfirmDeleteApi(api.id)}><Trash2 className="w-3 h-3 mr-1" /> Eliminar</Button>
+-                      )}
+-                    </CardContent>
+-                  </Card>
+-                );
+-              })}
++            <div className="grid grid-cols-2 gap-2">
++              <button className="action-btn" disabled={limpiandoExtensiones || !isElectron}
++                style={{ borderColor: 'rgba(157,78,221,0.2)' }}
++                onClick={async () => {
++                  setLimpiandoExtensiones(true);
++                  try { feedback("ok", (await window.antigravity.cleanExtensions()).mensaje); setMantenimiento(await window.antigravity.getMaintenanceInfo()); }
++                  catch (e) { feedback("err", `${e}`); }
++                  setLimpiandoExtensiones(false);
++                }}>
++                {limpiandoExtensiones ? <Loader2 className="w-4 h-4 text-violet-400 animate-spin" /> : <Trash2 className="w-4 h-4 text-violet-400" />}
++                <div>
++                  <div className="text-[12px] font-medium text-violet-300">Limpiar Extensiones</div>
++                  <div className="text-[10px] text-[var(--text-tertiary)]">{mantenimiento?.extensiones.innecesarias ?? 0} innecesarias</div>
++                </div>
++              </button>
++              <button className="action-btn" disabled={limpiandoCache || !isElectron}
++                style={{ borderColor: 'rgba(0,180,216,0.2)' }}
++                onClick={async () => {
++                  setLimpiandoCache(true);
++                  try { feedback("ok", (await window.antigravity.cleanBrowserCache()).mensaje); setMantenimiento(await window.antigravity.getMaintenanceInfo()); }
++                  catch (e) { feedback("err", `${e}`); }
++                  setLimpiandoCache(false);
++                }}>
++                {limpiandoCache ? <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" /> : <Globe className="w-4 h-4 text-cyan-400" />}
++                <div>
++                  <div className="text-[12px] font-medium text-cyan-300">Limpiar Cache</div>
++                  <div className="text-[10px] text-[var(--text-tertiary)]">{mantenimiento?.browserProfile.cacheLimpiable ?? '—'}</div>
++                </div>
++              </button>
+             </div>
+-
+-            {/* Resumen global */}
+-            <Card className="rounded-3xl glass-card border-0">
+-              <CardHeader className="pb-3">
+-                <CardTitle className="text-base flex items-center gap-2 text-slate-200">
+-                  <DollarSign className="w-4 h-4 text-amber-400" /> Resumen de Costes
+-                </CardTitle>
+-              </CardHeader>
+-              <CardContent>
+-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+-                  {[
+-                    { label: "APIs activas", valor: String(apis.length), color: "text-amber-400" },
+-                    { label: "Coste mensual", valor: `${apis.reduce((a, api) => a + api.proyectos.reduce((b, p) => b + p.consumoMensual, 0), 0).toFixed(2)}€`, color: "text-rose-400" },
+-                    { label: "Saldo total", valor: `${apis.reduce((a, api) => a + api.saldo, 0).toFixed(2)}€`, color: "text-emerald-400" },
+-                    { label: "Alertas", valor: String(apis.filter(a => a.limiteAlerta > 0 && a.saldo > 0 && a.saldo <= a.limiteAlerta).length), color: apis.filter(a => a.limiteAlerta > 0 && a.saldo > 0 && a.saldo <= a.limiteAlerta).length > 0 ? "text-rose-400" : "text-emerald-400" },
+-                  ].map((s) => (
+-                    <div key={s.label} className="rounded-2xl bg-slate-800/50 border border-slate-700/40 p-4 text-center">
+-                      <div className={`text-2xl font-bold ${s.color}`}>{s.valor}</div>
+-                      <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+-                    </div>
+-                  ))}
++            <div className="grid grid-cols-2 gap-2">
++              <button className="action-btn" disabled={!isElectron}
++                style={{ borderColor: 'rgba(255,45,120,0.2)' }}
++                onClick={async () => {
++                  try { feedback("ok", (await window.antigravity.cleanAntigravityCache()).mensaje); } catch (e) { feedback("err", `${e}`); }
++                }}>
++                <Trash2 className="w-4 h-4 text-rose-400" />
++                <div>
++                  <div className="text-[12px] font-medium text-rose-300">Limpiar Cache IDE</div>
++                  <div className="text-[10px] text-[var(--text-tertiary)]">Logs, Caches, SavedState</div>
+                 </div>
+-              </CardContent>
+-            </Card>
+-          </TabsContent>
+-
+-          {/* ───── SERVIDORES ───── */}
+-          <TabsContent value="servidores" className="space-y-6">
+-
+-            {/* Header con botón añadir */}
+-            <div className="flex items-center justify-between">
+-              <h2 className="text-lg font-semibold text-slate-200 flex items-center gap-2">
+-                <Globe className="w-5 h-5 text-cyan-400" /> Infraestructura ({servers.length} servidores)
+-              </h2>
+-              <Button
+-                size="sm"
+-                onClick={() => {
+-                  setEditingServer(null);
+-                  setServerForm({
+-                    id: `srv-${Date.now()}`, nombre: '', ip: '', proveedor: '', os: 'Ubuntu 24.04', ram: '',
+-                    color: 'emerald', ssh: '', proyectos: [], containers: [], notas: [],
+-                  });
+-                  setShowServerForm(true);
+-                }}
+-                className="rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30"
+-              >
+-                <Plus className="w-4 h-4 mr-1" /> Añadir servidor
+-              </Button>
++              </button>
++              <button className="action-btn" disabled={!isElectron}
++                onClick={async () => {
++                  try { feedback("ok", (await window.antigravity.killZombieProcesses()).mensaje); } catch (e) { feedback("err", `${e}`); }
++                }}>
++                <Activity className="w-4 h-4 text-amber-400" />
++                <div>
++                  <div className="text-[12px] font-medium text-amber-300">Procesos Zombie</div>
++                  <div className="text-[10px] text-[var(--text-tertiary)]">Detectar y matar</div>
++                </div>
++              </button>
+             </div>
+-
+-            {/* Modal formulario */}
+-            <AnimatePresence>
+-              {showServerForm && (
+-                <motion.div
+-                  initial={{ opacity: 0, height: 0 }}
+-                  animate={{ opacity: 1, height: 'auto' }}
+-                  exit={{ opacity: 0, height: 0 }}
+-                  className="overflow-hidden"
+-                >
+-                  <Card className="rounded-3xl glass-card border-0 glow-border">
+-                    <CardHeader className="pb-3">
+-                      <div className="flex items-center justify-between">
+-                        <CardTitle className="text-base text-slate-100">
+-                          {editingServer ? 'Editar servidor' : 'Nuevo servidor'}
+-                        </CardTitle>
+-                        <Button size="sm" variant="ghost" onClick={() => setShowServerForm(false)} className="text-slate-400 hover:text-white">
+-                          <X className="w-4 h-4" />
+-                        </Button>
+-                      </div>
+-                    </CardHeader>
+-                    <CardContent className="space-y-4">
+-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+-                        <Input placeholder="Nombre" value={serverForm.nombre} onChange={(e) => setServerForm({ ...serverForm, nombre: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <Input placeholder="IP" value={serverForm.ip} onChange={(e) => setServerForm({ ...serverForm, ip: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm font-mono" />
+-                        <Input placeholder="Proveedor" value={serverForm.proveedor} onChange={(e) => setServerForm({ ...serverForm, proveedor: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <Input placeholder="RAM / Specs" value={serverForm.ram} onChange={(e) => setServerForm({ ...serverForm, ram: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                      </div>
+-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+-                        <Input placeholder="OS" value={serverForm.os} onChange={(e) => setServerForm({ ...serverForm, os: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm" />
+-                        <Input placeholder="Comando SSH" value={serverForm.ssh} onChange={(e) => setServerForm({ ...serverForm, ssh: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-sm font-mono" />
+-                        <select value={serverForm.color} onChange={(e) => setServerForm({ ...serverForm, color: e.target.value })}
+-                          className="rounded-xl bg-slate-900/60 border border-slate-700/40 text-slate-200 text-sm px-3 py-2">
+-                          <option value="emerald">🟢 Emerald</option>
+-                          <option value="violet">🟣 Violet</option>
+-                          <option value="cyan">🔵 Cyan</option>
+-                          <option value="amber">🟡 Amber</option>
+-                          <option value="rose">🔴 Rose</option>
+-                        </select>
+-                      </div>
+-
+-                      {/* Proyectos inline */}
+-                      <div className="space-y-2">
+-                        <div className="text-xs text-slate-500 font-medium">Proyectos ({serverForm.proyectos.length})</div>
+-                        {serverForm.proyectos.map((p, i) => (
+-                          <div key={i} className="flex items-center gap-2 text-sm">
+-                            <span className={`${p.color} font-medium`}>{p.nombre}</span>
+-                            <span className="text-slate-500 text-xs">{p.desc}</span>
+-                            <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-rose-400 ml-auto"
+-                              onClick={() => setServerForm({ ...serverForm, proyectos: serverForm.proyectos.filter((_, j) => j !== i) })}>
+-                              <X className="w-3 h-3" />
+-                            </Button>
+-                          </div>
+-                        ))}
+-                        <div className="flex gap-2">
+-                          <Input placeholder="Nombre" value={newProjectInput.nombre} onChange={(e) => setNewProjectInput({ ...newProjectInput, nombre: e.target.value })}
+-                            className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-xs h-8" />
+-                          <Input placeholder="Descripción" value={newProjectInput.desc} onChange={(e) => setNewProjectInput({ ...newProjectInput, desc: e.target.value })}
+-                            className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-xs h-8" />
+-                          <Button size="sm" className="h-8 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+-                            onClick={() => {
+-                              if (newProjectInput.nombre) {
+-                                setServerForm({ ...serverForm, proyectos: [...serverForm.proyectos, { ...newProjectInput, activo: true }] });
+-                                setNewProjectInput({ nombre: '', desc: '', color: 'text-cyan-400' });
+-                              }
+-                            }}>
+-                            <Plus className="w-3 h-3" />
+-                          </Button>
+-                        </div>
+-                      </div>
+-
+-                      {/* Notas inline */}
+-                      <div className="space-y-2">
+-                        <div className="text-xs text-slate-500 font-medium">Notas ({serverForm.notas.length})</div>
+-                        {serverForm.notas.map((n, i) => (
+-                          <div key={i} className="flex items-center gap-2 text-xs text-slate-400">
+-                            <span>{n}</span>
+-                            <Button size="sm" variant="ghost" className="h-5 w-5 p-0 text-rose-400 ml-auto"
+-                              onClick={() => setServerForm({ ...serverForm, notas: serverForm.notas.filter((_, j) => j !== i) })}>
+-                              <X className="w-3 h-3" />
+-                            </Button>
+-                          </div>
+-                        ))}
+-                        <div className="flex gap-2">
+-                          <Input placeholder="Añadir nota..." value={newNoteInput} onChange={(e) => setNewNoteInput(e.target.value)}
+-                            className="rounded-xl bg-slate-900/60 border-slate-700/40 text-slate-200 text-xs h-8"
+-                            onKeyDown={(e) => { if (e.key === 'Enter' && newNoteInput) { setServerForm({ ...serverForm, notas: [...serverForm.notas, newNoteInput] }); setNewNoteInput(''); } }} />
+-                          <Button size="sm" className="h-8 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+-                            onClick={() => { if (newNoteInput) { setServerForm({ ...serverForm, notas: [...serverForm.notas, newNoteInput] }); setNewNoteInput(''); } }}>
+-                            <Plus className="w-3 h-3" />
+-                          </Button>
+-                        </div>
+-                      </div>
+-
+-                      <div className="flex gap-2 pt-2">
+-                        <Button className="rounded-xl bg-gradient-to-r from-cyan-500/30 to-violet-500/30 text-white hover:from-cyan-500/40 hover:to-violet-500/40"
+-                          onClick={async () => {
+-                            if (!serverForm.nombre || !serverForm.ip) return;
+-                            await window.antigravity.saveServer(serverForm);
+-                            const updated = await window.antigravity.getServers();
+-                            setServers(updated);
+-                            setShowServerForm(false);
+-                          }}>
+-                          {editingServer ? 'Guardar cambios' : 'Añadir servidor'}
+-                        </Button>
+-                        <Button variant="ghost" onClick={() => setShowServerForm(false)} className="rounded-xl text-slate-400">Cancelar</Button>
+-                      </div>
+-                    </CardContent>
+-                  </Card>
+-                </motion.div>
+-              )}
+-            </AnimatePresence>
+-
+-            {/* Grid de servidores dinámico */}
+-            <div className="grid lg:grid-cols-3 gap-6">
+-              {servers.map((srv) => {
+-                const colorMap: Record<string, string> = { emerald: 'text-emerald-400', violet: 'text-violet-400', cyan: 'text-cyan-400', amber: 'text-amber-400', rose: 'text-rose-400' };
+-                const sshColorMap: Record<string, string> = { emerald: 'text-emerald-300', violet: 'text-violet-300', cyan: 'text-cyan-300', amber: 'text-amber-300', rose: 'text-rose-300' };
+-                const iconColor = colorMap[srv.color] || 'text-cyan-400';
+-                const sshColor = sshColorMap[srv.color] || 'text-cyan-300';
+-                return (
+-                  <Card key={srv.id} className="rounded-3xl glass-card border-0">
+-                    <CardHeader className="pb-3">
+-                      <div className="flex items-center justify-between">
+-                        <CardTitle className="text-lg flex items-center gap-2 text-slate-100">
+-                          <Server className={`w-5 h-5 ${iconColor}`} />{srv.nombre}
+-                        </CardTitle>
+-                        <div className="flex items-center gap-1">
+-                          <Badge className="rounded-full bg-emerald-500/15 text-emerald-300 border-emerald-500/30 text-xs">
+-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 status-blink" />Activo
+-                          </Badge>
+-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-slate-500 hover:text-slate-300"
+-                            onClick={() => { setEditingServer(srv); setServerForm({ ...srv }); setShowServerForm(true); }}>
+-                            <Pencil className="w-3.5 h-3.5" />
+-                          </Button>
+-                          <Button size="sm" variant="ghost"
+-                            className={`h-7 w-7 p-0 ${checkingServer === srv.id ? 'text-cyan-400 animate-spin' : 'text-slate-500 hover:text-cyan-300'}`}
+-                            disabled={checkingServer === srv.id}
+-                            onClick={async () => {
+-                              setCheckingServer(srv.id);
+-                              setServerStatus(prev => ({ ...prev, [srv.id]: { ok: true, msg: 'Conectando...' } }));
+-                              const result = await window.antigravity.checkServer(srv);
+-                              if (result.exito) {
+-                                const updated = await window.antigravity.getServers();
+-                                setServers(updated);
+-                                setServerStatus(prev => ({ ...prev, [srv.id]: { ok: true, msg: '✅ Actualizado' } }));
+-                              } else {
+-                                setServerStatus(prev => ({ ...prev, [srv.id]: { ok: false, msg: result.mensaje } }));
+-                              }
+-                              setCheckingServer(null);
+-                              setTimeout(() => setServerStatus(prev => { const n = { ...prev }; delete n[srv.id]; return n; }), 5000);
+-                            }}>
+-                            <RefreshCw className="w-3.5 h-3.5" />
+-                          </Button>
+-                        </div>
+-                      </div>
+-                      <CardDescription className="text-slate-500 font-mono text-xs mt-1">{srv.ip} · {srv.os} · {srv.ram}</CardDescription>
+-                      {serverStatus[srv.id] && (
+-                        <div className={`text-xs mt-1 ${serverStatus[srv.id].ok ? 'text-emerald-400' : 'text-rose-400'}`}>
+-                          {serverStatus[srv.id].msg}
+-                        </div>
+-                      )}
+-                    </CardHeader>
+-                    <CardContent className="space-y-4">
+-                      {srv.proyectos.length > 0 && (
+-                        <div className="space-y-2">
+-                          {srv.proyectos.map((p) => (
+-                            <div key={p.nombre} className="flex items-center justify-between py-1.5 border-b border-slate-700/40 last:border-0">
+-                              <div>
+-                                <div className={`text-sm font-medium ${p.color}`}>{p.nombre}</div>
+-                                <div className="text-xs text-slate-500">{p.desc}</div>
+-                              </div>
+-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+-                            </div>
+-                          ))}
+-                        </div>
+-                      )}
+-                      {srv.containers.length > 0 && (
+-                        <div className="rounded-xl bg-slate-900/60 border border-slate-700/40 p-3 space-y-1.5">
+-                          <div className="text-xs text-slate-500 mb-2 flex items-center gap-1"><Container className="w-3 h-3" /> Docker ({srv.containers.length})</div>
+-                          {srv.containers.map((c) => (
+-                            <div key={c.nombre} className="flex items-center justify-between text-xs">
+-                              <span className="text-slate-400 font-mono">{c.nombre}</span>
+-                              <div className="flex items-center gap-2">
+-                                <span className="text-slate-600">:{c.puerto}</span>
+-                                {c.activo ? <span className="text-emerald-400">✅</span> : <span className="text-rose-400">❌</span>}
+-                              </div>
+-                            </div>
+-                          ))}
+-                        </div>
+-                      )}
+-                      <div className="rounded-xl bg-slate-900/60 border border-slate-700/40 p-3">
+-                        <div className="text-xs text-slate-500 mb-1 flex items-center gap-1"><Terminal className="w-3 h-3" /> SSH</div>
+-                        <code className={`text-xs ${sshColor} font-mono break-all`}>{srv.ssh}</code>
+-                      </div>
+-                      {srv.notas.length > 0 && (
+-                        <div className="text-xs text-slate-500 space-y-0.5">
+-                          {srv.notas.map((n, i) => (<div key={i}>{n}</div>))}
+-                        </div>
+-                      )}
+-                      {confirmDeleteServer === srv.id ? (
+-                        <div className="flex items-center gap-2">
+-                          <span className="text-xs text-rose-400">¿Seguro?</span>
+-                          <Button size="sm" className="h-6 rounded-lg bg-rose-500/20 text-rose-300 text-xs hover:bg-rose-500/30"
+-                            onClick={async () => { await window.antigravity.deleteServer(srv.id); const u = await window.antigravity.getServers(); setServers(u); setConfirmDeleteServer(null); }}>Sí</Button>
+-                          <Button size="sm" variant="ghost" className="h-6 text-xs text-slate-400" onClick={() => setConfirmDeleteServer(null)}>No</Button>
+-                        </div>
+-                      ) : (
+-                        <Button size="sm" variant="ghost" className="text-xs text-slate-600 hover:text-rose-400 p-0 h-auto"
+-                          onClick={() => setConfirmDeleteServer(srv.id)}>
+-                          <Trash2 className="w-3 h-3 mr-1" /> Eliminar
+-                        </Button>
+-                      )}
+-                    </CardContent>
+-                  </Card>
+-                );
+-              })}
++          </div>
++        </div>
++
++        {/* Diagnóstico */}
++        <div className="panel">
++          <div className="p-5 border-b border-[var(--border-default)]">
++            <div className="section-title flex items-center gap-2">
++              <BarChart3 className="w-4 h-4 text-violet-400" /> Diagnóstico del Sistema
+             </div>
+-
+-            {/* Resumen global auto-calculado */}
+-            <Card className="rounded-3xl glass-card border-0">
+-              <CardHeader className="pb-3">
+-                <CardTitle className="text-base flex items-center gap-2 text-slate-200">
+-                  <Globe className="w-4 h-4 text-cyan-400" /> Infraestructura Global
+-                </CardTitle>
+-              </CardHeader>
+-              <CardContent>
+-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+-                  {[
+-                    { label: "Servidores", valor: String(servers.length), color: "text-emerald-400" },
+-                    { label: "Proyectos activos", valor: String(servers.reduce((a, s) => a + s.proyectos.filter(p => p.activo).length, 0)), color: "text-violet-400" },
+-                    { label: "Contenedores", valor: String(servers.reduce((a, s) => a + s.containers.length, 0)), color: "text-cyan-400" },
+-                    { label: "Notas", valor: String(servers.reduce((a, s) => a + s.notas.length, 0)), color: "text-amber-400" },
+-                  ].map((s) => (
+-                    <div key={s.label} className="rounded-2xl bg-slate-800/50 border border-slate-700/40 p-4 text-center">
+-                      <div className={`text-3xl font-bold ${s.color}`}>{s.valor}</div>
+-                      <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+-                    </div>
+-                  ))}
++            <div className="section-sub">Estado actual de tu instalación</div>
++          </div>
++          <div className="p-4 space-y-2">
++            {[
++              { label: "Espacio en disco", val: salud?.tamañoTotal ?? "—", icon: HardDrive, color: "text-cyan-400" },
++              { label: "Conversaciones (.pb)", val: `${salud?.totalConversaciones ?? 0}`, icon: Database, color: "text-violet-400" },
++              { label: "Artefactos (.md)", val: `${salud?.totalArtefactos ?? 0}`, icon: FileText, color: "text-emerald-400" },
++              { label: "Imágenes y grabaciones", val: `${salud?.totalImagenes ?? 0}`, icon: Image, color: "text-rose-400" },
++              { label: "Sesiones Brain", val: `${salud?.totalSesionesBrain ?? 0}`, icon: Brain, color: "text-amber-400" },
++              { label: "Conv. grandes (>3MB)", val: `${salud?.conversacionesGrandes ?? 0}`, icon: AlertTriangle, color: salud && salud.conversacionesGrandes > 0 ? "text-amber-400" : "text-emerald-400" },
++            ].map((item, i) => (
++              <div key={i} className="flex items-center justify-between p-3 surface">
++                <div className="flex items-center gap-2.5">
++                  <item.icon className={`w-4 h-4 ${item.color}`} />
++                  <span className="text-[13px] text-[var(--text-secondary)]">{item.label}</span>
+                 </div>
+-              </CardContent>
+-            </Card>
+-          </TabsContent>
+-
++                <span className="text-[13px] font-mono font-medium text-[var(--text-primary)]">{item.val}</span>
++              </div>
++            ))}
++          </div>
++
++          {/* Barras de salud */}
++          <div className="px-4 pb-4 space-y-3">
++            <div className="divider my-1" />
++            {[
++              { label: "Seguridad de sesiones", val: salud?.seguridadSesiones ?? 0, color: "text-emerald-400" },
++              { label: "Externalización de prompts", val: salud?.externalizacionPrompts ?? 0, color: "text-violet-400" },
++              { label: "Riesgo de sobrecarga", val: salud?.riesgoContexto ?? 0, color: "text-amber-400" },
++            ].map(item => (
++              <div key={item.label}>
++                <div className="flex justify-between mb-1.5">
++                  <span className="text-[12px] text-[var(--text-tertiary)]">{item.label}</span>
++                  <span className={`text-[12px] font-mono font-semibold ${item.color}`}>{item.val}%</span>
++                </div>
++                <Progress value={item.val} className="h-1.5" />
++              </div>
++            ))}
++          </div>
++        </div>
++      </motion.div>
++    );
++  }
+ 
+-        </Tabs>
+-      </div>
+-    </div>
+-  );
+-}
++  function renderApis() {
++    const colorMap: Record<string, { text: string; chip: string; border: string }> = {
++      amber: { text: 'text-amber-400', chip: 'chip-amber', border:

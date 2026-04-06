@@ -1,0 +1,8 @@
+CRITICAL RULE (Brain Protocol):
+1. AT START: ALWAYS read the relevant Knowledge Items (KIs) summaries. Read context.md BEFORE doing anything.
+2. 1 KI PER PROJECT: NEVER create multiple KIs for the same project. Consolidate into existing ones.
+3. AT END: Update the project's KI context.md and metadata.json unconditionally.
+4. AT END: RUN system cleanup commands to maintain Brain hygiene:
+rm -rf ~/.gemini/antigravity-browser-profile/Default/Cache ~/.gemini/antigravity-browser-profile/Default/Code\ Cache ~/.gemini/antigravity-browser-profile/Default/GPUCache ~/.gemini/antigravity-browser-profile/Default/Service\ Worker
+find ~/.gemini/antigravity/brain -name "*.resolved" -delete
+rm -rf ~/Library/Caches/com.google.antigravity ~/Library/Caches/com.google.antigravity.ShipIt ~/Library/Caches/Antigravity ~/Library/Logs/Antigravity

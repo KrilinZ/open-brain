@@ -1,0 +1,32 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/release/**": true,
+    "**/out/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/landing/**": true,
+    "**/.next/**": true
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/release": true,
+    "**/.git": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/release": true,
+    "**/build": true,
+    "package-lock.json": true
+  },
+  "typescript.validate.enable": true,
+  "javascript.validate.enable": false,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 2000,
+  "workbench.editor.restoreViewState": true,
+  "workbench.startupEditor": "restorePreviousSession",
+  "workbench.editor.enablePreview": false
+}

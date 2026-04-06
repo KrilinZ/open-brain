@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Brain — Manual de Instalación</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #06060f;
+      --card: rgba(12,12,30,0.7);
+      --border: rgba(255,255,255,0.06);
+      --text: #e2e8f0;
+      --muted: #8892a4;
+      --accent: #00e5ff;
+      --pink: #e040fb;
+      --blue: #00bcd4;
+      --purple: #b388ff;
+      --green: #4ade80;
+      --amber: #fbbf24;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Inter', -apple-system, sans-serif;
+      line-height: 1.7; overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      text-align: center; padding: 4rem 2rem 3rem;
+      background: linear-gradient(180deg, rgba(0,229,255,0.06) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .header::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--pink), transparent);
+    }
+    .header .badge {
+      display: inline-block; font-family: 'Orbitron'; font-size: 0.6rem;
+      letter-spacing: 0.2em; color: var(--accent);
+      border: 1px solid rgba(0,229,255,0.2); padding: 4px 14px;
+      border-radius: 999px; margin-bottom: 1.5rem;
+      background: rgba(0,229,255,0.05);
+    }
+    .header h1 {
+      font-family: 'Orbitron'; font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, var(--accent), var(--pink), var(--blue), var(--accent));
+      background-size: 200% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+      margin-bottom: 0.8rem;
+    }
+    @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+    .header p { color: var(--muted); font-size: 1rem; max-width: 500px; margin: 0 auto; }
+    .version-tag {
+      display: inline-block; margin-top: 1rem;
+      font-family: 'JetBrains Mono'; font-size: 0.75rem; color: var(--green);
+      background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.2);
+      padding: 4px 12px; border-radius: 6px;
+    }
+
+    /* Container */
+    .container { max-width: 800px; margin: 0 auto; padding: 3rem 2rem; }
+
+    /* Section */
+    .section { margin-bottom: 3.5rem; }
+    .section-num {
+      font-family: 'Orbitron'; font-size: 0.6rem; letter-spacing: 0.2em;
+      color: var(--accent); margin-bottom: 0.8rem;
+    }
+    .section h2 {
+      font-family: 'Orbitron'; font-size: 1.4rem; font-weight: 700;
+      margin-bottom: 1rem; color: #fff;
+    }
+    .section p { color: var(--muted); margin-bottom: 1rem; }
+
+    /* Requirements grid */
+    .req-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+    .req-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.2rem;
+    }
+    .req-card .req-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.8rem; font-size: 1.2rem;
+    }
+    .req-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .req-card p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+
+    /* Steps */
+    .step {
+      display: flex; gap: 1.5rem; margin-bottom: 2rem;
+      position: relative; padding-left: 0.5rem;
+    }
+    .step::before {
+      content: ''; position: absolute; left: 22px; top: 48px; bottom: -24px;
+      width: 2px; background: linear-gradient(180deg, var(--accent), transparent);
+    }
+    .step:last-child::before { display: none; }
+    .step-number {
+      width: 44px; height: 44px; min-width: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(224,64,251,0.1));
+      border: 1px solid rgba(0,229,255,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron'; font-size: 0.9rem; font-weight: 900;
+      color: var(--accent);
+    }
+    .step-content { flex: 1; }
+    .step-content h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .step-content p { font-size: 0.9rem; color: var(--muted); }
+
+    /* Code blocks */
+    .code-block {
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(0,229,255,0.15);
+      border-radius: 10px; padding: 1rem 1.2rem; margin: 0.8rem 0 1.2rem;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+      color: var(--accent); overflow-x: auto; position: relative;
+    }
+    .code-block .lang {
+      position: absolute; top: 6px; right: 10px;
+      font-size: 0.6rem; color: var(--muted); opacity: 0.5;
+      font-family: 'Orbitron'; letter-spacing: 0.1em;
+    }
+    .code-block .comment { color: var(--muted); }
+    .code-block .path { color: var(--pink); }
+    .code-block .cmd { color: var(--green); }
+
+    /* Warning / Info boxes */
+    .info-box {
+      border-radius: 12px; padding: 1.2rem 1.5rem; margin: 1.2rem 0;
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .info-box.warn {
+      background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.2);
+    }
+    .info-box.info {
+      background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.2);
+    }
+    .info-box.success {
+      background: rgba(74,222,128,0.06); border: 1px solid rgba(74,222,128,0.15);
+    }
+    .info-box .icon { font-size: 1.3rem; min-width: 28px; text-align: center; }
+    .info-box .box-content { flex: 1; }
+    .info-box .box-content h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .info-box .box-content p { font-size: 0.85rem; color: var(--muted); margin: 0; }
+
+    /* Tab cards (for features) */
+    .tab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin: 1.5rem 0; }
+    .tab-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.2rem;
+      transition: all 0.3s;
+    }
+    .tab-card:hover { border-color: rgba(0,229,255,0.3); transform: translateY(-2px); }
+    .tab-card h4 {
+      font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .tab-card h4 .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .tab-card p { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+    /* FAQ */
+    .faq-item { margin-bottom: 1.5rem; }
+    .faq-item h4 {
+      font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem;
+      color: var(--accent);
+    }
+    .faq-item p { font-size: 0.9rem; color: var(--muted); }
+
+    /* Footer */
+    .footer {
+      text-align: center; padding: 3rem 2rem;
+      border-top: 1px solid var(--border);
+      position: relative;
+    }
+    .footer::before {
+      content: ''; position: absolute; top: -1px; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--pink), var(--accent), transparent);
+    }
+    .footer p { color: var(--muted); font-size: 0.8rem; }
+    .footer .brand {
+      font-family: 'Orbitron'; font-size: 0.7rem; letter-spacing: 0.15em;
+      color: var(--accent); margin-bottom: 0.5rem;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 999px; }
+
+    /* Prompt box */
+    .prompt-box {
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.25);
+      border-radius: 12px; overflow: hidden; margin: 1.5rem 0;
+      box-shadow: 0 0 20px rgba(0,229,255,0.05);
+    }
+    .prompt-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: rgba(0,229,255,0.06);
+      border-bottom: 1px solid rgba(0,229,255,0.1);
+      font-family: 'Orbitron'; font-size: 0.6rem; color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+    .copy-btn {
+      background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3);
+      color: var(--accent); padding: 5px 14px; border-radius: 6px;
+      font-family: 'Inter'; font-size: 0.75rem; font-weight: 600;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .copy-btn:hover { background: rgba(0,229,255,0.2); transform: scale(1.05); }
+    .prompt-content {
+      padding: 1.2rem 1.5rem; font-family: 'Inter', sans-serif; font-size: 0.85rem;
+      color: var(--text); white-space: pre-wrap; line-height: 1.7;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container { padding: 2rem 1.2rem; }
+      .step { gap: 1rem; }
+      .req-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="header">
+    <button id="langToggle" onclick="toggleLang()" style="position:absolute;top:1.5rem;right:2rem;background:none;border:1px solid rgba(0,229,255,0.3);color:var(--accent);font-family:'Orbitron',monospace;font-size:0.65rem;padding:4px 10px;border-radius:6px;cursor:pointer;letter-spacing:0.1em;">ES</button>
+    <div class="badge" data-i18n="badge">INSTALLATION MANUAL</div>
+    <h1>Antigravity Brain</h1>
+    <p data-i18n="header_p">Step-by-step guide to install and configure your AI Control Tower on macOS.</p>
+    <div class="version-tag">v2.0.0 · macOS arm64 (Apple Silicon)</div>
+  </div>
+
+  <div class="container">
+
+    <!-- ═══ REQUISITOS ═══ -->
+    <div class="section">
+      <div class="section-num" data-i18n="s1_num">01 — REQUIREMENTS</div>
+      <h2 data-i18n="s1_title">Before you start</h2>
+      <p data-i18n="s1_desc">Verify your machine meets these minimum requirements:</p>
+
+      <div class="req-grid">
+        <div class="req-card">
+          <div class="req-icon" style="background:rgba(0,229,255,0.1);">🍎</div>
+          <h4>macOS</h4>
+          <p data-i18n="req1">macOS 13 Ventura or later</p>
+        </div>
+        <div class="req-card">
+          <div class="req-icon" style="background:rgba(224,64,251,0.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e040fb" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <h4 data-i18n="req2_t">Processor</h4>
+          <p>Apple Silicon (M1/M2/M3/M4)</p>
+        </div>
+        <div class="req-card">
+          <div class="req-icon" style="background:rgba(0,188,212,0.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <h4 data-i18n="req3_t">Storage</h4>
+          <p data-i18n="req3_p">~200MB free disk space</p>
+        </div>
+        <div class="req-card">
+          <div class="req-icon" style="background:rgba(179,136,255,0.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b388ff" stroke-width="2"><path d="M12 2a7 7 0 017 7c0 2.4-1.2 4.5-3 5.7V17a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2.3C6.2 13.5 5 11.4 5 9a7 7 0 017-7z"/><path d="M10 21h4"/></svg></div>
+          <h4>Antigravity</h4>
+          <p data-i18n="req4_p">Antigravity extension installed</p>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <div class="icon">ℹ️</div>
+        <div class="box-content">
+          <h4 data-i18n="info1_t">Do you need Antigravity installed?</h4>
+          <p data-i18n="info1_p">Yes. The app reads data directly from <code style="color:var(--accent);">~/.gemini/antigravity/</code>. Without Antigravity, the app will open but have no data to show. Install the extension first and work with it to generate sessions and artifacts.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INSTALACIÓN ═══ -->
+    <div class="section">
+      <div class="section-num" data-i18n="s2_num">02 — INSTALLATION</div>
+      <h2 data-i18n="s2_title">Install antigravitybrain.dmg</h2>
+
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3 data-i18n="st1_t">Open the DMG</h3>
+          <p data-i18n="st1_p">Double-click <strong style="color:var(--accent);">antigravitybrain.dmg</strong>. A virtual disk image with the app inside will mount.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3 data-i18n="st2_t">Drag to Applications</h3>
+          <p data-i18n="st2_p">Drag the <strong>Antigravity Brain</strong> icon to the <strong>Applications</strong> folder shown next to it. This copies the app to your Mac.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3 data-i18n="st3_t">First launch (Gatekeeper)</h3>
+          <p data-i18n="st3_p">On first launch, macOS will show a security warning because the app is unsigned. Follow these steps:</p>
+          <div class="code-block">
+            <div class="lang">TERMINAL</div>
+            <span class="comment" data-i18n="st3_optA"># Option A: From System Settings</span><br>
+            <span class="cmd" data-i18n="st3_cmdA">System Settings → Privacy & Security → "Open Anyway"</span><br><br>
+            <span class="comment" data-i18n="st3_optB"># Option B: Via Terminal (faster)</span><br>
+            <span class="cmd">sudo xattr -rd com.apple.quarantine /Applications/Antigravity\ Brain.app</span>
+          </div>
+          <div class="info-box warn">
+            <div class="icon">⚠️</div>
+            <div class="box-content">
+              <h4 data-i18n="st3_warn_t">Why does the warning appear?</h4>
+              <p data-i18n="st3_warn_p">The app is not signed with an Apple Developer certificate ($99/year). It's completely safe — the source code is 100% auditable. This step is only required the first time.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content">
+          <h3 data-i18n="st4_t">Done!</h3>
+          <p data-i18n="st4_p">The app will automatically detect your <code style="color:var(--accent);">~/.gemini/antigravity/</code> directory and load all your sessions, artifacts and Knowledge Items.</p>
+          <div class="info-box success">
+            <div class="icon">✅</div>
+            <div class="box-content">
+              <h4 data-i18n="st4_auto_t">Autopilot mode active</h4>
+              <p data-i18n="st4_auto_p">On launch, Autopilot mode activates automatically, scanning sessions every 30 seconds, cleaning junk files, verifying integrity and syncing Knowledge Items.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONFIGURACIÓN ═══ -->
+    <div class="section">
+      <div class="section-num" data-i18n="s3_num">03 — INITIAL SETUP</div>
+      <h2 data-i18n="s3_title">First steps after installing</h2>
+
+      <div class="step">
+        <div class="step-number">A</div>
+        <div class="step-content">
+          <h3 data-i18n="cfgA_t">Add your servers</h3>
+          <p data-i18n="cfgA_p">Go to the <strong style="color:var(--accent);">Servers</strong> tab and click <strong>"+ Add"</strong>. Enter the name, IP, SSH user and key path. The panel will be able to live-check RAM, disk, Docker and PM2 status.</p>
+          <div class="code-block">
+            <div class="lang">EJEMPLO</div>
+            <span class="comment"># Datos de un servidor típico:</span><br>
+            Nombre: <span class="path">Mi VPS Producción</span><br>
+            IP: <span class="path">123.456.789.0</span><br>
+            SSH User: <span class="path">root</span><br>
+            SSH Key: <span class="path">~/.ssh/id_ed25519</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">B</div>
+        <div class="step-content">
+          <h3 data-i18n="cfgB_t">Add your API keys</h3>
+          <p data-i18n="cfgB_p">Go to the <strong style="color:var(--pink);">APIs</strong> tab and click <strong>"+ Add API"</strong>. Enter the service name, type, key and estimated balance. Keys are stored locally on your Mac, never sent to the internet.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number">C</div>
+        <div class="step-content">
+          <h3 data-i18n="cfgC_t">Explore your data</h3>
+          <p data-i18n="cfgC_p">The <strong>Sessions</strong>, <strong>Artifacts</strong> and <strong>Knowledge Items</strong> tabs auto-populate by reading your Antigravity directory. No setup needed — just work with Antigravity and the panel updates itself.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TABS ═══ -->
+    <div class="section">
+      <div class="section-num" data-i18n="s4_num">04 — THE 9 TABS</div>
+      <h2 data-i18n="s4_title">What each tab does</h2>
+
+      <div class="tab-grid">
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--accent);"></span> <span data-i18n="tab1">Sessions</span></h4>
+          <p data-i18n="tab1_p">All your AI conversations in real time with health status and tokens.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--purple);"></span> Prompts</h4>
+          <p data-i18n="tab2_p">10 production templates auto-filled with your real infra.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--blue);"></span> <span data-i18n="tab3">Artifacts</span></h4>
+          <p data-i18n="tab3_p">Vault of documents, images and code generated by AI.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--green);"></span> <span data-i18n="tab4">Repair</span></h4>
+          <p data-i18n="tab4_p">.resolved cleanup, integrity verification and auto-repair.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--amber);"></span> APIs</h4>
+          <p data-i18n="tab5_p">API key management with cost tracking and renewal alerts.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--accent);"></span> <span data-i18n="tab6">Servers</span></h4>
+          <p data-i18n="tab6_p">SSH live check to your servers: RAM, disk, Docker, PM2 in one click.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--pink);"></span> Knowledge</h4>
+          <p data-i18n="tab7_p">Local knowledge base auto-synced across sessions.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--blue);"></span> Info</h4>
+          <p data-i18n="tab8_p">Paths, versions, system health and environment metrics.</p>
+        </div>
+        <div class="tab-card">
+          <h4><span class="dot" style="background:var(--purple);"></span> Dashboard</h4>
+          <p data-i18n="tab9_p">Real-time KPIs with cyberpunk aesthetics and animations.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ESTRUCTURA ═══ -->
+    <div class="section">
+      <div class="section-num" data-i18n="s5_num">05 — DATA STRUCTURE</div>
+      <h2 data-i18n="s5_title">Where everything lives</h2>
+      <p data-i18n="s5_desc">The app reads and writes exclusively to this directory:</p>
+      <div class="code-block">
+        <div class="lang">FILESYSTEM</div>
+        <span class="path">~/.gemini/antigravity/</span><br>
+        <span class="comment">├── brain/</span>           <span class="muted" style="color:var(--muted);">← Conversaciones y artefactos</span><br>
+        <span class="comment">├── knowledge/</span>       <span class="muted" style="color:var(--muted);">← Knowledge Items</span><br>
+        <span class="comment">├── conversations/</span>   <span class="muted" style="color:var(--muted);">← Sesiones de Antigravity</span><br>
+        <span class="comment">├── implicit/</span>        <span class="muted" style="color:var(--muted);">← Conversaciones implícitas</span><br>
+        <span class="comment">├── servers.json</span>     <span class="muted" style="color:var(--muted);">← Tus servidores (se crea al añadir)</span><br>
+        <span class="comment">└── apis.json</span>        <span class="muted" style="color:var(--muted);">← Tus API keys (se crea al añadir)</span>
+      </div>
+
+      <div class="info-box info">
+        <div class="icon">🔒</div>
+        <div class="box-content">
+          <h4>100% Local</h4>
+          <p data-i18n="local_p">The app sends NO data to the internet. Everything is read and written to your local disk. Your API keys, servers and sessions never leave your Mac.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FAQ ═══ -->
+    <div class="section">
+      <div class="section-num" data-i18n="s6_num">06 — FAQ</div>
+      <h2>FAQ</h2>
+
+      <div class="faq-item">
+        <h4 data-i18n="faq1_t">Does it work on Intel Mac?</h4>
+        <p data-i18n="faq1_p">This build is for Apple Silicon only (M1/M2/M3/M4). If you have Intel, contact me and I'll generate a compatible build.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4 data-i18n="faq2_t">Do I need Antigravity running at the same time?</h4>
+        <p data-i18n="faq2_p">No. The app reads files from disk. You can have Antigravity closed. But if it's running, you'll see data update in real time.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4 data-i18n="faq3_t">Can I easily uninstall?</h4>
+        <p data-i18n="faq3_p">Yes. Drag the app from Applications to Trash. Your Antigravity data is NOT touched — it's in <code style="color:var(--accent);">~/.gemini/antigravity/</code> and is independent.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4 data-i18n="faq4_t">Does the app modify my Antigravity data?</h4>
+        <p data-i18n="faq4_p">Only in two cases: when you click "Clean .resolved" (deletes repair files) and when Autopilot generates Knowledge Items. It never deletes sessions or artifacts.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4 data-i18n="faq5_t">Is it free?</h4>
+        <p data-i18n="faq5_p">Yes, 100% free. Non-profit project. Share freely.</p>
+      </div>
+
+      <div class="faq-item">
+        <h4 data-i18n="faq6_t">Is the source code available?</h4>
+        <p data-i18n="faq6_p">If you want to audit the code, contact me. It's 100% transparent — you can verify there's no telemetry, tracking or data sending.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-num" data-i18n="s7_num">07 — TROUBLESHOOTING</div>
+      <h2 data-i18n="s7_title">If something doesn't work</h2>
+
+      <div class="info-box warn">
+        <div class="icon">🔧</div>
+        <div class="box-content">
+          <h4 data-i18n="ts1_t">"app is damaged and can't be opened"</h4>
+          <p data-i18n="ts1_p">Run in Terminal: <code style="color:var(--accent);">sudo xattr -rd com.apple.quarantine /Applications/Antigravity\ Brain.app</code></p>
+        </div>
+      </div>
+
+      <div class="info-box warn">
+        <div class="icon">🔧</div>
+        <div class="box-content">
+          <h4 data-i18n="ts2_t">The app opens but shows no sessions</h4>
+          <p data-i18n="ts2_p">Verify the directory exists: <code style="color:var(--accent);">ls ~/.gemini/antigravity/brain/</code> — if empty, work with Antigravity first to generate data.</p>
+        </div>
+      </div>
+
+      <div class="info-box warn">
+        <div class="icon">🔧</div>
+        <div class="box-content">
+          <h4 data-i18n="ts3_t">Servers won't connect via SSH</h4>
+          <p data-i18n="ts3_p">Verify the SSH key path is correct and has proper permissions: <code style="color:var(--accent);">chmod 600 ~/.ssh/your_key</code></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-num" data-i18n="s8_num">08 — SETUP PROMPT</div>
+      <h2 data-i18n="s8_title">Paste this in Antigravity to finish setup</h2>
+      <p data-i18n="s8_desc">Open a conversation with Antigravity and paste this prompt. It will detect your Antigravity Brain installation and help you configure servers, APIs and Knowledge Items automatically.</p>
+
+      <div class="prompt-box" id="promptBox">
+        <div class="prompt-header">
+          <span data-i18n="prompt_label">PROMPT READY TO COPY</span>
+          <button class="copy-btn" onclick="copyPrompt()" data-i18n="copy_btn">Copy</button>
+        </div>
+        <div class="prompt-content" id="promptContent">I just installed Antigravity Brain (Control Tower) — the desktop app that reads my data from ~/.gemini/antigravity/ and gives me a panel with sessions, artifacts, Knowledge Items, servers and APIs.
+
+I need you to help me configure it completely:
+
+1. **Servers**: I have these servers I want to monitor from the app. For each one I need to register: name, IP, SSH user, SSH key path, and the projects running on it. Generate the file ~/.gemini/antigravity/servers.json with the correct format. Ask me for data on each server.
+
+2. **APIs**: I have these API keys I use in my projects. For each register: service name, type, key, estimated balance, and associated projects. Generate ~/.gemini/antigravity/apis.json. Ask me for data.
+
+3. **Knowledge Items**: Scan my current projects and generate initial KIs in ~/.gemini/antigravity/knowledge/ so the app has context from the start. Each KI needs a metadata.json with summary and an artifacts/ with context.md.
+
+4. **Verification**: Once files are created, open Antigravity Brain and confirm the Servers, APIs and Knowledge Items panels show data correctly.
+
+Guide me step by step. Start by asking how many servers I have and their details.</div>
+      </div>
+
+      <div class="info-box success">
+        <div class="icon">💡</div>
+        <div class="box-content">
+          <h4 data-i18n="prompt_info_t">What does this prompt do?</h4>
+          <p data-i18n="prompt_info_p">It asks Antigravity to create config files (<code style="color:var(--accent);">servers.json</code>, <code style="color:var(--accent);">apis.json</code> and Knowledge Items) on your disk. The app reads them automatically and you'll start seeing your servers, APIs and knowledge in the panel.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="brand">ANTIGRAVITY BRAIN v2.0.0</div>
+    <p data-i18n="footer_p">Non-profit project · Made with love for the dev community</p>
+    <p style="margin-top:0.5rem;opacity:0.4;font-size:0.7rem;" data-i18n="footer_sub">Local-first desktop app for developers operating with AI</p>
+  </div>
+
+  <script>
+    function copyPrompt() {
+      const text = document.getElementById('promptContent').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✓ Copied';
+        btn.style.background = 'rgba(74,222,128,0.2)';
+        btn.style.borderColor = 'rgba(74,222,128,0.4)';
+        btn.style.color = '#4ade80';
+        setTimeout(() => {
+          btn.textContent = currentLang==='en'?'Copy':'Copiar';
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2000);
+      });
+    }
+
+    const i18n = {
+      es: {
+        badge:'MANUAL DE INSTALACIÓN',header_p:'Guía paso a paso para instalar y configurar tu Torre de Control AI en macOS.',
+        s1_num:'01 — REQUISITOS',s1_title:'Antes de empezar',s1_desc:'Verifica que tu equipo cumple estos requisitos mínimos:',
+        req1:'macOS 13 Ventura o superior',req2_t:'Procesador',req3_t:'Espacio',req3_p:'~200MB libres en disco',req4_p:'Extensión Antigravity (Gemini CLI) instalada',
+        info1_t:'¿Necesitas Antigravity instalado?',info1_p:'Sí. La app lee los datos directamente de <code style="color:var(--accent);">~/.gemini/antigravity/</code>. Si no tienes Antigravity, la app abrirá pero no tendrá datos que mostrar. Instala la extensión primero y trabaja con ella para generar sesiones y artefactos.',
+        s2_num:'02 — INSTALACIÓN',s2_title:'Instalar antigravitybrain.dmg',
+        st1_t:'Abrir el DMG',st1_p:'Haz doble click en <strong style="color:var(--accent);">antigravitybrain.dmg</strong>. Se montará una imagen de disco virtual con la app dentro.',
+        st2_t:'Arrastrar a Aplicaciones',st2_p:'Arrastra el icono de <strong>Antigravity Brain</strong> a la carpeta <strong>Aplicaciones</strong> que aparece al lado. Esto copia la app a tu Mac.',
+        st3_t:'Primer arranque (Gatekeeper)',st3_p:'Al abrir la app por primera vez, macOS mostrará un aviso de seguridad porque es una app sin firmar. Sigue estos pasos:',
+        st3_optA:'# Opción A: Desde Ajustes del Sistema',st3_cmdA:'Ajustes del Sistema → Privacidad y Seguridad → "Abrir de todas formas"',st3_optB:'# Opción B: Con Terminal (más rápido)',
+        st3_warn_t:'¿Por qué aparece el aviso?',st3_warn_p:'La app no está firmada con un certificado de Apple Developer ($99/año). Es completamente segura — el código fuente es 100% auditable. Este paso solo es necesario la primera vez.',
+        st4_t:'¡Listo!',st4_p:'La app detectará automáticamente tu directorio <code style="color:var(--accent);">~/.gemini/antigravity/</code> y cargará todas tus sesiones, artefactos y Knowledge Items.',
+        st4_auto_t:'Modo Autopilot activo',st4_auto_p:'Al arrancar, se activa automáticamente el modo Autopilot que cada 30 segundos escanea sesiones, limpia archivos basura, verifica integridad y sincroniza Knowledge Items.',
+        s3_num:'03 — CONFIGURACIÓN INICIAL',s3_title:'Primeros pasos tras instalar',
+        cfgA_t:'Añadir tus servidores',cfgA_p:'Ve a la pestaña <strong style="color:var(--accent);">Servidores</strong> y pulsa <strong>"+ Añadir"</strong>. Introduce el nombre, IP, usuario SSH y ruta de la key. El panel podrá comprobar en vivo el estado de RAM, disco, Docker y PM2.',
+        cfgB_t:'Añadir tus API keys',cfgB_p:'Ve a la pestaña <strong style="color:var(--pink);">APIs</strong> y pulsa <strong>"+ Añadir API"</strong>. Introduce el nombre del servicio, tipo, key y saldo estimado. Las keys se guardan localmente en tu Mac, nunca salen a internet.',
+        cfgC_t:'Explorar tus datos',cfgC_p:'Las pestañas <strong>Sesiones</strong>, <strong>Artefactos</strong> y <strong>Knowledge Items</strong> se rellenan automáticamente leyendo tu directorio de Antigravity. No necesitas configurar nada — solo trabaja con Antigravity y el panel se actualiza solo.',
+        s4_num:'04 — LAS 9 PESTAÑAS',s4_title:'Qué hace cada pestaña',
+        tab1:'Sesiones',tab1_p:'Todas tus conversaciones AI en tiempo real con estado de salud y tokens.',
+        tab2_p:'10 plantillas de producción auto-rellenadas con tu infra real.',
+        tab3:'Artefactos',tab3_p:'Bóveda de documentos, imágenes y código generados por la IA.',
+        tab4:'Reparar',tab4_p:'Limpieza de .resolved, verificación de integridad y reparación auto.',
+        tab5_p:'Gestión de API keys con tracking de costes y alertas de renovación.',
+        tab6:'Servidores',tab6_p:'SSH live check a tus servidores: RAM, disco, Docker, PM2 en un click.',
+        tab7_p:'Base de conocimiento local auto-sincronizada entre sesiones.',
+        tab8_p:'Rutas, versiones, salud del sistema y métricas del entorno.',
+        tab9_p:'KPIs en tiempo real con estética cyberpunk y animaciones.',
+        s5_num:'05 — ESTRUCTURA DE DATOS',s5_title:'Dónde vive todo',s5_desc:'La app lee y escribe exclusivamente en este directorio:',
+        local_p:'La app no envía NINGÚN dato a internet. Todo se lee y escribe en tu disco local. Tus API keys, servidores y sesiones nunca salen de tu Mac.',
+        s6_num:'06 — PREGUNTAS FRECUENTES',
+        faq1_t:'¿Funciona en Intel Mac?',faq1_p:'Esta build es solo para Apple Silicon (M1/M2/M3/M4). Si tienes Intel, contáctame y te genero un build compatible.',
+        faq2_t:'¿Necesito tener Antigravity corriendo?',faq2_p:'No. La app lee los archivos del disco. Puedes tener Antigravity cerrado. Pero si está corriendo, verás datos actualizarse en tiempo real.',
+        faq3_t:'¿Puedo desinstalar fácilmente?',faq3_p:'Sí. Arrastra la app desde Aplicaciones a la papelera. Tus datos de Antigravity NO se tocan — están en <code style="color:var(--accent);">~/.gemini/antigravity/</code> y son independientes.',
+        faq4_t:'¿La app modifica mis datos?',faq4_p:'Solo en dos casos: cuando pulsas "Limpiar .resolved" y cuando el Autopilot genera Knowledge Items. Nunca borra sesiones ni artefactos.',
+        faq5_t:'¿Es gratis?',faq5_p:'Sí, 100% gratuita. Proyecto sin ánimo de lucro. Comparte libremente.',
+        faq6_t:'¿El código fuente está disponible?',faq6_p:'Si quieres auditar el código, contáctame. Es 100% transparente — sin telemetría, tracking ni envío de datos.',
+        s7_num:'07 — SOLUCIÓN DE PROBLEMAS',s7_title:'Si algo no funciona',
+        ts1_t:'"app dañada y no puede abrirse"',ts1_p:'Ejecuta en Terminal: <code style="color:var(--accent);">sudo xattr -rd com.apple.quarantine /Applications/Antigravity\\ Brain.app</code>',
+        ts2_t:'La app abre pero no muestra sesiones',ts2_p:'Verifica que tienes el directorio: <code style="color:var(--accent);">ls ~/.gemini/antigravity/brain/</code> — si está vacío, trabaja primero con Antigravity.',
+        ts3_t:'Los servidores no conectan por SSH',ts3_p:'Verifica la ruta de la SSH key y los permisos: <code style="color:var(--accent);">chmod 600 ~/.ssh/tu_key</code>',
+        s8_num:'08 — PROMPT DE CONFIGURACIÓN',s8_title:'Pega esto en Antigravity para configurar',s8_desc:'Abre una conversación con Antigravity y pega este prompt. Detectará tu instalación y te ayudará a configurar servidores, APIs y Knowledge Items automáticamente.',
+        prompt_label:'PROMPT LISTO PARA COPIAR',copy_btn:'Copiar',
+        prompt_info_t:'¿Qué hace este prompt?',prompt_info_p:'Le pide a Antigravity que cree los archivos de configuración (<code style="color:var(--accent);">servers.json</code>, <code style="color:var(--accent);">apis.json</code> y Knowledge Items) en tu disco. La app los leerá automáticamente.',
+        footer_p:'Proyecto sin ánimo de lucro · Hecho con amor para la comunidad dev',footer_sub:'Desktop app local-first para desarrolladores que operan con AI'
+      },
+      en: {
+        badge:'INSTALLATION MANUAL',header_p:'Step-by-step guide to install and configure your AI Control Tower on macOS.',
+        s1_num:'01 — REQUIREMENTS',s1_title:'Before you start',s1_desc:'Verify your machine meets these minimum requirements:',
+        req1:'macOS 13 Ventura or later',req2_t:'Processor',req3_t:'Storage',req3_p:'~200MB free disk space',req4_p:'Antigravity extension installed',
+        info1_t:'Do you need Antigravity installed?',info1_p:'Yes. The app reads data directly from <code style="color:var(--accent);">~/.gemini/antigravity/</code>. Without Antigravity, the app will open but have no data to show.',
+        s2_num:'02 — INSTALLATION',s2_title:'Install antigravitybrain.dmg',
+        st1_t:'Open the DMG',st1_p:'Double-click <strong style="color:var(--accent);">antigravitybrain.dmg</strong>. A virtual disk image with the app inside will mount.',
+        st2_t:'Drag to Applications',st2_p:'Drag the <strong>Antigravity Brain</strong> icon to the <strong>Applications</strong> folder shown next to it.',
+        st3_t:'First launch (Gatekeeper)',st3_p:'On first launch, macOS will show a security warning because the app is unsigned. Follow these steps:',
+        st3_optA:'# Option A: From System Settings',st3_cmdA:'System Settings → Privacy & Security → "Open Anyway"',st3_optB:'# Option B: Via Terminal (faster)',
+        st3_warn_t:'Why does the warning appear?',st3_warn_p:'The app is not signed with an Apple Developer certificate ($99/year). It\'s completely safe — the source code is 100% auditable. This step is only required the first time.',
+        st4_t:'Done!',st4_p:'The app will automatically detect your <code style="color:var(--accent);">~/.gemini/antigravity/</code> directory and load all your sessions, artifacts and Knowledge Items.',
+        st4_auto_t:'Autopilot mode active',st4_auto_p:'On launch, Autopilot mode activates automatically, scanning sessions every 30 seconds, cleaning junk files, verifying integrity and syncing Knowledge Items.',
+        s3_num:'03 — INITIAL SETUP',s3_title:'First steps after installing',
+        cfgA_t:'Add your servers',cfgA_p:'Go to the <strong style="color:var(--accent);">Servers</strong> tab and click <strong>"+ Add"</strong>. Enter the name, IP, SSH user and key path.',
+        cfgB_t:'Add your API keys',cfgB_p:'Go to the <strong style="color:var(--pink);">APIs</strong> tab and click <strong>"+ Add API"</strong>. Enter service name, type, key and estimated balance. Keys are stored locally.',
+        cfgC_t:'Explore your data',cfgC_p:'The <strong>Sessions</strong>, <strong>Artifacts</strong> and <strong>Knowledge Items</strong> tabs auto-populate by reading your Antigravity directory. No setup needed.',
+        s4_num:'04 — THE 9 TABS',s4_title:'What each tab does',
+        tab1:'Sessions',tab1_p:'All your AI conversations in real time with health status and tokens.',
+        tab2_p:'10 production templates auto-filled with your real infra.',
+        tab3:'Artifacts',tab3_p:'Vault of documents, images and code generated by AI.',
+        tab4:'Repair',tab4_p:'.resolved cleanup, integrity verification and auto-repair.',
+        tab5_p:'API key management with cost tracking and renewal alerts.',
+        tab6:'Servers',tab6_p:'SSH live check to your servers: RAM, disk, Docker, PM2 in one click.',
+        tab7_p:'Local knowledge base auto-synced across sessions.',
+        tab8_p:'Paths, versions, system health and environment metrics.',
+        tab9_p:'Real-time KPIs with cyberpunk aesthetics and animations.',
+        s5_num:'05 — DATA STRUCTURE',s5_title:'Where everything lives',s5_desc:'The app reads and writes exclusively to this directory:',
+        local_p:'The app sends NO data to the internet. Everything is read and written to your local disk. Your API keys, servers and sessions never leave your Mac.',
+        s6_num:'06 — FAQ',
+        faq1_t:'Does it work on Intel Mac?',faq1_p:'This build is for Apple Silicon only (M1/M2/M3/M4). If you have Intel, contact me and I\'ll generate a compatible build.',
+        faq2_t:'Do I need Antigravity running?',faq2_p:'No. The app reads files from disk. You can have Antigravity closed. But if it\'s running, you\'ll see data update in real time.',
+        faq3_t:'Can I easily uninstall?',faq3_p:'Yes. Drag the app from Applications to Trash. Your Antigravity data is NOT touched — it\'s in <code style="color:var(--accent);">~/.gemini/antigravity/</code> and is independent.',
+        faq4_t:'Does the app modify my data?',faq4_p:'Only in two cases: when you click "Clean .resolved" and when Autopilot generates Knowledge Items. It never deletes sessions or artifacts.',
+        faq5_t:'Is it free?',faq5_p:'Yes, 100% free. Non-profit project. Share freely.',
+        faq6_t:'Is the source code available?',faq6_p:'If you want to audit the code, contact me. It\'s 100% transparent — no telemetry, tracking or data sending.',
+        s7_num:'07 — TROUBLESHOOTING',s7_title:'If something doesn\'t work',
+        ts1_t:'"app is damaged and can\'t be opened"',ts1_p:'Run in Terminal: <code style="color:var(--accent);">sudo xattr -rd com.apple.quarantine /Applications/Antigravity\\ Brain.app</code>',
+        ts2_t:'The app opens but shows no sessions',ts2_p:'Verify the directory exists: <code style="color:var(--accent);">ls ~/.gemini/antigravity/brain/</code> — if empty, work with Antigravity first to generate data.',
+        ts3_t:'Servers won\'t connect via SSH',ts3_p:'Verify the SSH key path is correct and has proper permissions: <code style="color:var(--accent);">chmod 600 ~/.ssh/your_key</code>',
+        s8_num:'08 — SETUP PROMPT',s8_title:'Paste this in Antigravity to finish setup',s8_desc:'Open a conversation with Antigravity and paste this prompt. It will detect your installation and help configure servers, APIs and Knowledge Items automatically.',
+        prompt_label:'PROMPT READY TO COPY',copy_btn:'Copy',
+        prompt_info_t:'What does this prompt do?',prompt_info_p:'It asks Antigravity to create config files (<code style="color:var(--accent);">servers.json</code>, <code style="color:var(--accent);">apis.json</code> and Knowledge Items) on your disk. The app reads them automatically.',
+        footer_p:'Non-profit project · Made with love for the dev community',footer_sub:'Local-first desktop app for developers operating with AI'
+      }
+    };
+    let currentLang = 'en';
+    function setLang(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      document.getElementById('langToggle').textContent = lang === 'en' ? 'ES' : 'EN';
+      const strings = i18n[lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (strings[key]) el.innerHTML = strings[key];
+      });
+    }
+    function toggleLang() { setLang(currentLang === 'en' ? 'es' : 'en'); }
+    setLang('en');
+  </script>
+
+</body>
+</html>

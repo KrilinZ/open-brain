@@ -1,0 +1,59 @@
+# Heavy directories
+node_modules/
+dist/
+release/
+build/
+out/
+.next/
+.git/
+.tempmediaStorage/
+coverage/
+.turbo/
+landing/
+public/assets/
+
+# Icon sets (heavy, never need indexing)
+src/assets/AppIcon.iconset/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Minified / compiled
+**/*.min.js
+**/*.min.css
+**/__snapshots__/
+
+# Binary / heavy files
+*.dmg
+*.zip
+*.tar.gz
+*.icns
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.mp4
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.blockmap
+
+# Logs
+*.log
+
+# Map files
+*.map
+*.js.map
+*.css.map
+
+# TypeScript build info
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db

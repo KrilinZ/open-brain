@@ -1,0 +1,9 @@
+node_modules/
+dist/
+release/
+*.dmg
+*.blockmap
+.DS_Store
+builder-debug.yml
+builder-effective-config.yaml
+mac-arm64/
