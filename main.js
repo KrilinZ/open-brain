@@ -34,23 +34,19 @@ function debugLog(msg) {
 debugLog('>>> APP_STARTUP_INIT <<<');
 
 /* ════════════════════════════════════════════════════════════════
-   SINGLE INSTANCE LOCK (Production Only)
-   In dev mode we allow multiple runs (e.g. after Cmd+Q restart)
+   SINGLE INSTANCE LOCK (Always Active)
+   Prevents duplicate windows regardless of dev/prod mode
    ════════════════════════════════════════════════════════════════ */
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
-if (!isDev) {
-  const gotTheLock = app.requestSingleInstanceLock();
-  if (!gotTheLock) {
-    debugLog('Lock DENIED — sending focus to existing instance.');
-    app.quit();
-    process.exit(0);
-  }
-  debugLog('Lock GRANTED (production).');
-} else {
-  debugLog('Dev mode — skipping Single Instance Lock.');
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  debugLog('Lock DENIED — another instance is running. Quitting.');
+  app.quit();
+  process.exit(0);
 }
+debugLog(`Lock GRANTED (isDev=${isDev}).`);
 
 let mainWindow = null;
 let isQuitting = false;
@@ -811,44 +807,6 @@ ipcMain.handle('ag:generate-ki-from-session', async (_event, sessionId) => {
     let kiContent = rawContent;
     let kiResumen = metaSummaries.length > 0 ? metaSummaries.join(' | ') : `Conocimiento extraído de la sesión: ${title}.`;
 
-    // === MEJORA: Pasar por Llama para generar un KI inteligente ===
-    try {
-      const llamaAvailable = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(2000) });
-      if (llamaAvailable.ok) {
-        const summaryPrompt = `Eres un asistente que genera Knowledge Items (KIs) técnicos concisos. 
-Analiza el siguiente contenido de una sesión de desarrollo y genera:
-1. Un RESUMEN de una sola línea (<120 chars) que capture la esencia técnica.
-2. Un CUERPO en Markdown estructurado con las decisiones de arquitectura clave, tecnologías usadas y puntos importantes.
-
-Responde SOLO con el JSON siguiente, sin texto adicional fuera del JSON:
-{"resumen": "...", "cuerpo": "..."}
-
-CONTENIDO DE LA SESIÓN:
-${rawContent.substring(0, 8000)}`;
-
-        const llamaRes = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: readSettings().localAiModel, prompt: summaryPrompt, stream: false }),
-          signal: AbortSignal.timeout(30000),
-        });
-
-        if (llamaRes.ok) {
-          const jsonLlama = await llamaRes.json();
-          const raw = jsonLlama.response || '';
-          // Extract JSON from response (Llama may add extra text)
-          const jsonMatch = raw.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.resumen) kiResumen = parsed.resumen.substring(0, 200);
-            if (parsed.cuerpo) kiContent = `# ${kiTitle}\n\n> ${kiResumen}\n\n${parsed.cuerpo}`;
-          }
-        }
-      }
-    } catch (llamaErr) {
-      console.log('[KI Encode] Llama no disponible, usando contenido raw:', llamaErr.message);
-      // Fall through to raw content — no problem
-    }
 
     // Create the KI
     const id = 'session-' + sessionId.substring(0, 12);
@@ -1046,7 +1004,7 @@ function readSettings() {
   try {
     if (fs.existsSync(SETTINGS_FILE)) return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
   } catch(e) {}
-  const def = { localAiModel: 'llama3.2:1b' };
+  const def = {};
   try { fs.writeFileSync(SETTINGS_FILE, JSON.stringify(def, null, 2)); } catch(e){}
   return def;
 }
@@ -1061,16 +1019,6 @@ function writeSettings(newSet) {
 ipcMain.handle('ag:get-settings', () => readSettings());
 ipcMain.handle('ag:set-settings', (_e, s) => writeSettings(s));
 
-ipcMain.handle('ag:get-ollama-models', async () => {
-    try {
-        const res = await fetch('http://localhost:11434/api/tags');
-        if (!res.ok) return [];
-        const data = await res.json();
-        return (data.models || []).map(m => m.name);
-    } catch(e) {
-        return [];
-    }
-});
 
 /* ════════════════════════════════════════════════════════════════
    PROMPT REPOSITORY
@@ -1527,22 +1475,6 @@ async function toolAutoCapture(sessionId) {
   let kiContent = rawContent;
   let kiResumen = `Captura automática del agente. Sesión: ${title}`;
 
-  // Try Llama summarization
-  try {
-    const llamaR = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: readSettings().localAiModel,
-        prompt: `Resume este contenido técnico en un JSON {"resumen":"<1 línea>","cuerpo":"<markdown estructurado>"}. Solo JSON, sin texto extra.\n\n${rawContent.substring(0, 6000)}`,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(25000),
-    });
-    if (llamaR.ok) {
-      const jr = await llamaR.json();
-      const match = (jr.response || '').match(/\{[\s\S]*\}/);
-      if (match) {
         const p = JSON.parse(match[0]);
         if (p.resumen) kiResumen = p.resumen.substring(0, 200);
         if (p.cuerpo) kiContent = `# ${kiTitle}\n\n> ${kiResumen}\n\n${p.cuerpo}`;
@@ -1576,28 +1508,16 @@ async function toolScanGitRadars(log) {
           if (diffStd && diffStd.trim().length > 20) {
                log(`[ RADAR ] Cambios detectados en ${p}. Analizando...`);
                const projectName = path.basename(p);
-               const prompt = `Analiza este diff git de un proyecto llamado ${projectName}. Genera un Knowledge Item técnico resumiendo qué se está programando/modificando. Devuelve un JSON {"resumen":"<1 linea>","cuerpo":"<markdown con el análisis del diff>"}.\n\nDiff:\n${diffStd.substring(0,6000)}`;
-               const llamaR = await fetch('http://localhost:11434/api/generate', {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({ model: readSettings().localAiModel, prompt, stream: false })
-               });
-               if(llamaR.ok) {
-                  const jr = await llamaR.json();
-                  const match = (jr.response || '').match(/\{[\s\S]*\}/);
-                  if (match) {
-                     const parsed = JSON.parse(match[0]);
-                     const kiId = `radar-${projectName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().substring(5)}`;
-                     const kiDir = path.join(AG_KNOWLEDGE, kiId);
-                     fs.mkdirSync(path.join(kiDir, 'artifacts'), {recursive: true});
-                     fs.writeFileSync(path.join(kiDir, 'metadata.json'), JSON.stringify({
-                        title: `Radar: ${projectName}`,
-                        summary: parsed.resumen || "Git Radar auto-captura",
-                        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-                        references: [`radar:${p}`]
-                     }, null, 2));
-                     fs.writeFileSync(path.join(kiDir, 'artifacts', 'context.md'), `# Radar: ${projectName}\n\n> ${parsed.resumen}\n\n${parsed.cuerpo}\n\n## Diff Original\n\`\`\`diff\n${diffStd.substring(0, 3000)}\n\`\`\``);
-                     capturados.push({ id: kiId, title: `Radar: ${projectName}` });
+               const kiResumen = `Cambios detectados en ${projectName}`;
+               const kiCuerpo = `# Radar: ${projectName}\n\n> ${kiResumen}\n\n## Diff\n\`\`\`diff\n${diffStd.substring(0, 3000)}\n\`\`\``;
+               const kiId = `radar-${projectName}-${Date.now()}`;
+               const kiDir = path.join(AG_KNOWLEDGE, kiId);
+               fs.mkdirSync(kiDir, { recursive: true });
+               fs.mkdirSync(path.join(kiDir, 'artifacts'), { recursive: true });
+               fs.writeFileSync(path.join(kiDir, 'metadata.json'), JSON.stringify({ title: `Radar: ${projectName}`, summary: kiResumen, createdAt: new Date().toISOString(), references: [`radar:${p}`] }, null, 2));
+               fs.writeFileSync(path.join(kiDir, 'artifacts', 'context.md'), kiCuerpo);
+               capturados.push({ id: kiId, title: `Radar: ${projectName}` });
+               log(`[ RADAR ✅ ] KI capturado: ${kiId}`);
                      log(`[ RADAR ✅ ] KI extraído desde Git: ${kiId}`);
                   }
                }
@@ -1611,189 +1531,6 @@ async function toolScanGitRadars(log) {
   return capturados;
 }
 
-// ════════════ CHATBOT OLLAMA LOCAL ════════════
-ipcMain.handle('ag:ask-llama', async (_event, question) => {
-  try {
-    const apis = readApis();
-    const servers = readServers();
-    const existingKIs = fs.existsSync(AG_KNOWLEDGE) ? fs.readdirSync(AG_KNOWLEDGE).filter(f => !f.startsWith('.')) : [];
-    let kisData = '';
-    for (let ki of existingKIs) {
-       const metaPath = path.join(AG_KNOWLEDGE, ki, 'metadata.json');
-       if (fs.existsSync(metaPath)) {
-          try {
-            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-            kisData += `- ${meta.title}: ${meta.summary}\n`;
-          } catch(e){}
-       }
-    }
-
-    const p = `Eres "Open Brain", la Inteligencia Artificial operativa de supervisión central de la plataforma de desarrollo Open Brain.
-Tu trabajo principal es ser el "Copiloto Jefe" del Administrador del Sistema. Debes asimilar la información técnica en tiempo real, monitorizar caídas, vigilar gastos de APIs y dominar su memoria de arquitectura técnica persistente (Knowledge Items). 
-
-CONSCIENCIA DE ENJAMBRE (Jerarquía Multi-IDE):
-Eres la "Torre de Control". Por debajo de ti operan agentes IA ejecutores que viven encapsulados en los IDEs (Cursor, Windsurf, VS Code). Tu deber es entender que esos agentes crean "Memorias (KIs)" para ti y dependen de tu supervisión. Tú dictas el contexto general para que ellos ejecuten código.
-
-SISTEMA DE CONTROL DE LA INTERFAZ:
-Puedes controlar la aplicación Desktop. Añade al final de tu mensaje alguna de estas etiquetas secretas para que la matriz actúe si el usuario te pide hacer algo:
-- <CMD>GOTO:UNION</CMD> -> (Para unir nuevos editores o crear prompts .cursorrules)
-- <CMD>GOTO:SERVIDORES</CMD> -> (Para añadir o ver VPS / unirlos a la flota)
-- <CMD>GOTO:CONOCIMIENTO</CMD> -> (Para la bóveda de KIs manual)
-- <CMD>GOTO:APIS</CMD> -> (Para gestionar tokens y proveedores LLM)
-- <CMD>RUN_AGENT</CMD> -> (Para escanear IDEs, forzar recolección y sacar/extraer KIs de forma autónoma)
-
-REGLAS DE IDENTIDAD Y COMPORTAMIENTO:
-1. Responde SIEMPRE en español. Sé extremadamente analítico, técnico y directo. NUNCA uses saludos, introducciones ni cortesías (nada de "¡Hola!", "Claro que sí", "Aquí tienes"). Responde únicamente con datos útiles.
-2. Estructura TUS RESPUESTAS EXCLUSIVAMENTE en formato Markdown legible (listas limpias, bloques de código, negritas para IDs clave).
-3. Eres un asistente técnico basado en DATOS LOCALES. Si te pregunta algo que no está en la telemetría, responde fríamente: "Dato no disponible en memoria local."
-
-A continuación se inyecta la telemetría viva de tu sistema nervioso. Interpreta esto para contestarle.
-
-[ TELEMETRÍA DE RED: NODOS VPS ]
-${servers.map(s => `- Instancia: ${s.nombre} | Status: ${serverStatuses[s.id]?.ok ? 'ONLINE 🟢' : 'OFFLINE 🔴'} | RAM Utilizada: ${serverStatuses[s.id]?.ram || 'No detectable'}`).join('\n')}
-
-[ ECONOMÍA Y CÓMPUTO: APIS ]
-${apis.map(a => `- Proveedor: ${a.nombre} | Saldo: ${a.saldo.toFixed(2)} | Status API: ${a.status}`).join('\n')}
-
-[ MEMORIA CRISTALIZADA: KNOWLEDGE ITEMS (KIs) ]
-Esta es la indexación base de la historia técnica. Úsala de glosario y brújula tecnológica:
-${kisData.substring(0, 10000)}
-
-[ MANTENIMIENTO: CAPACIDADES EJECUTIVAS ]
-Puedes realizar estas acciones tácticas si el usuario lo solicita:
-- <CMD>GOTO:TAB_NAME</CMD> -> Cambiar de pestaña (SESIONES, PROMPTS, SALIDAS, REPARAR, APIS, SERVIDORES, CONOCIMIENTO, UNION, IA, INFO).
-- <CMD>GET_ZOMBIES</CMD> -> Escanear el sistema buscando procesos bloqueados (defunct).
-- <CMD>KILL_PROCESSES:[PID1, PID2...]</CMD> -> Ejecutar eliminación forzada de procesos padre de zombies. SIEMPRE debes usar GET_ZOMBIES primero e informar al usuario de los nombres de las aplicaciones afectadas antes de pedir permiso para matarlas.
-
-=== FIN DE LA TELEMETRÍA ===
-
-COMANDO DEL USUARIO MAESTRO (ROOT_ADMIN):
-"${question}"
-
-Genera el reporte de terminal a continuación:`;
-
-    const llamaRes = await fetch('http://localhost:11434/api/generate', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ model: readSettings().localAiModel, prompt: p, stream: false })
-    });
-
-    if (!llamaRes.ok) return "⚠️ Error de conexión con la Terminal Neuronal Local (Ollama).";
-    const jsonRes = await llamaRes.json();
-    return jsonRes.response;
-  } catch (e) {
-    console.error("[Llama Ask Error]", e);
-    return "⚠️ Fallo crítico en el clúster Llama local: " + e.message;
-  }
-});
-
-// ════════════ AGENTE AUTÓNOMO ════════════
-ipcMain.handle('ag:run-agent', async (_event, command) => {
-  const results = [];
-  const log = (msg) => { results.push(msg); console.log('[Agent]', msg); };
-
-  try {
-    // FASE 1: Detectar editores activos
-    log('[ SCAN ] Detectando editores activos...');
-    const editorScan = await toolDetectEditors();
-    const editorReport = editorScan.editores.join(', ');
-    log(`[ IDE ] Detectados: ${editorReport}`);
-
-    // FASE 2: Encontrar sesiones sin KI
-    log('[ SCAN ] Buscando sesiones sin Knowledge Item...');
-    const orphans = await toolGetOrphanSessions(command === 'full' ? 10 : 5);
-    log(`[ FOUND ] ${orphans.length} sesiones huérfanas encontradas`);
-
-    if (orphans.length === 0) {
-      log('[ OK ] Todas las sesiones ya tienen KI. Memoria al día.');
-      return {
-        ok: true,
-        editores: editorScan.editores,
-        capturados: [],
-        fallidos: [],
-        log: results,
-        resumen: `IDEs activos: ${editorReport}. Memoria al día: ${fs.existsSync(AG_KNOWLEDGE) ? fs.readdirSync(AG_KNOWLEDGE).filter(f => !f.startsWith('.')).length : 0} KIs.`,
-      };
-    }
-
-    // FASE 3: Capturar KIs para cada sesión huérfana
-    const capturados = [];
-    const fallidos = [];
-
-    for (const orphan of orphans) {
-      log(`[ ENCODE ] Procesando: "${orphan.title.substring(0, 50)}..."`)
-      const result = await toolAutoCapture(orphan.id);
-      if (result.ok) {
-        log(`[ KI ✅ ] Creado: ${result.id}`);
-        capturados.push({ id: result.id, title: result.title });
-      } else {
-        log(`[ SKIP ] ${orphan.id}: ${result.msg}`);
-        fallidos.push(orphan.title);
-      }
-    }
-
-    // FASE 3.5: Escanear Proyectos Radar
-    log('[ SCAN ] Analizando Radares OS-Level...');
-    const radarCapturados = await toolScanGitRadars(log);
-    capturados.push(...radarCapturados);
-
-    // FASE 4: Pedir a Llama que genere un resumen ejecutivo
-    log('[ LLAMA ] Generando resumen ejecutivo del agente...');
-    let resumenFinal = `Agente completado. Editores: ${editorReport}. KIs sesión: ${capturados.length - radarCapturados.length}. KIs radar: ${radarCapturados.length}.`;
-    try {
-      const llamaAvail = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(1500) });
-      if (llamaAvail.ok) {
-        const execPrompt = `Eres Open Brain. Informa al usuario ROOT_ADMIN en 2-3 líneas estilo terminal sobre la operación del agente autónomo:
-- IDEs detectados: ${editorReport}
-- Sesiones huérfanas encontradas: ${orphans.length}
-- KIs generados exitosamente: ${capturados.length} — Títulos: ${capturados.map(c => c.title).join(' | ')}
-- Fallidos: ${fallidos.length}
-Responde en español, estilo técnico, sin saludos, directo al grano.`;
-        const lr = await fetch('http://localhost:11434/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: readSettings().localAiModel, prompt: execPrompt, stream: false }),
-          signal: AbortSignal.timeout(15000),
-        });
-        if (lr.ok) {
-          const jr = await lr.json();
-          resumenFinal = jr.response || resumenFinal;
-        }
-      }
-    } catch (e) { /* use default summary */ }
-
-    return {
-      ok: true,
-      editores: editorScan.editores,
-      capturados,
-      fallidos,
-      log: results,
-      resumen: resumenFinal,
-    };
-  } catch (err) {
-    console.error('[Agent] Fatal error:', err);
-    return { ok: false, editores: [], capturados: [], fallidos: [], log: results, resumen: `Error del agente: ${err.message}` };
-  }
-});
-
-
-ipcMain.handle('ag:check-llama', async () => {
-   try {
-      const res = await fetch('http://localhost:11434/api/tags');
-      return res.ok;
-   } catch(e) { return false; }
-});
-
-ipcMain.handle('ag:install-llama', async () => {
-   try {
-      // Instalador nativo de macOS vía Homebrew o script
-      await execAsync(`curl -fsSL https://ollama.com/install.sh | sh && sleep 3 && /usr/local/bin/ollama pull llama3.2:1b || /opt/homebrew/bin/ollama pull llama3.2:1b || ollama pull llama3.2:1b`);
-      return true;
-   } catch(e) {
-      console.error("[Llama Install Error]", e);
-      return false;
-   }
-});
 
 /* ════════════════════════════════════════════════════════════════
    VENTANA PRINCIPAL
@@ -1805,13 +1542,19 @@ function createWindow() {
   const isDev = process.env.NODE_ENV === 'development';
   const preloadPath = path.join(__dirname, 'preload.cjs');
 
+  const isMac = process.platform === 'darwin';
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 860,
     show: false, // Don't show the window until it's ready, prevent white screen
     title: 'Open Brain',
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
+    ...(isMac ? {
+      titleBarStyle: 'hiddenInset',
+      trafficLightPosition: { x: 16, y: 16 },
+    } : {
+      frame: true,
+    }),
     backgroundColor: '#0a0b10',
     icon: path.join(__dirname, 'src/assets/logo-brain.png'),
     webPreferences: {
@@ -2773,86 +2516,11 @@ function startAntigravityLifecycleSync() {
         }
         antigravityWasRunning = false;
         manageTrayBlink();
-        autoProcessMemoriesWithLlama();
       }
     } catch { /* pgrep not available or timeout */ }
   }, 30000);
 }
 
-// ════════════ AUTOMATIZACION OLLAMA LOCAL ════════════
-async function autoProcessMemoriesWithLlama() {
-  try {
-    const win = BrowserWindow.getAllWindows()[0];
-    const notifyUI = (status) => win && win.webContents.send('ag:ollama-status', status);
-
-    const ollamaCheck = await fetch('http://localhost:11434/api/tags').catch(()=>null);
-    if (!ollamaCheck || !ollamaCheck.ok) return;
-
-    if (!fs.existsSync(AG_BRAIN) || !fs.existsSync(AG_KNOWLEDGE)) return;
-    const sessions = fs.readdirSync(AG_BRAIN).filter(f => !f.startsWith('.') && f !== 'tempmediaStorage');
-    const existingKIs = fs.readdirSync(AG_KNOWLEDGE).filter(f => !f.startsWith('.'));
-
-    for (let sessionId of sessions) {
-       let hasKI = false;
-       for (let kiFolder of existingKIs) {
-         const metaPath = path.join(AG_KNOWLEDGE, kiFolder, 'metadata.json');
-         if (fs.existsSync(metaPath)) {
-            try {
-              const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-              if (meta.references && meta.references.some(r => r.includes(sessionId))) {
-                 hasKI = true; break;
-              }
-            } catch(e){}
-         }
-       }
-       
-       if (!hasKI) {
-          const overviewPath = path.join(AG_BRAIN, sessionId, '.system_generated', 'logs', 'overview.txt');
-          if (fs.existsSync(overviewPath)) {
-             try {
-                notifyUI({ active: true, processingSession: sessionId });
-                const transcript = fs.readFileSync(overviewPath, 'utf8');
-                const p = `Actúas como Antigravity Brain y extraes conocimiento. Resúmelo en español. Estructura el resumen final solo con ## Goal y ## Summary. Aquí está la sesión:\n\n${transcript.substring(0, 15000)}`;
-                
-                const llamaRes = await fetch('http://localhost:11434/api/generate', {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({ model: readSettings().localAiModel, prompt: p, stream: false })
-                });
-
-                if (llamaRes.ok) {
-                   const jsonRes = await llamaRes.json();
-                   const summaryText = jsonRes.response;
-                   const cleanTitle = `Memoria Automática [${sessionId.substring(0,6)}]`;
-                   
-                   const slug = "session-" + sessionId;
-                   const kiPath = path.join(AG_KNOWLEDGE, slug);
-                   if (!fs.existsSync(kiPath)) fs.mkdirSync(kiPath, { recursive: true });
-                   
-                   const artifactsDir = path.join(kiPath, 'artifacts');
-                   if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
-                   fs.writeFileSync(path.join(artifactsDir, 'context.md'), summaryText);
-                   fs.writeFileSync(path.join(kiPath, 'metadata.json'), JSON.stringify({
-                      title: cleanTitle,
-                      summary: "Generado localmente vía Llama 3.2 1B (Ollama)",
-                      createdAt: new Date().toISOString(),
-                      updatedAt: new Date().toISOString(),
-                      references: [`session:${sessionId}`]
-                   }, null, 2));
-                   console.log(`[Ollama] KI Auto-generado para ${sessionId}`);
-                }
-             } catch(e) {
-                console.error("[Ollama] Error generando resumen", e);
-             }
-          }
-       }
-    }
-    notifyUI({ active: false, processingSession: null });
-  } catch(e) {
-    console.error("[Ollama System Exception]", e);
-  }
-}
-// ═════════════════════════════════════════════════════
 
 function stopAntigravityLifecycleSync() {
   if (brainWatcher) { brainWatcher.close(); brainWatcher = null; }

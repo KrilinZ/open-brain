@@ -65,12 +65,6 @@ contextBridge.exposeInMainWorld('antigravity', {
   listExtensions: () => ipcRenderer.invoke('ag:list-extensions'),
 
   // ═══════════ AUTONOMIA OLLAMA ═══════════
-  checkLlama: () => ipcRenderer.invoke('ag:check-llama'),
-  installLlama: () => ipcRenderer.invoke('ag:install-llama'),
-  askLlama: (question) => ipcRenderer.invoke('ag:ask-llama', question),
-  onOllamaStatus: (callback) => {
-    ipcRenderer.on('ag:ollama-status', (_event, status) => callback(status));
-    return () => ipcRenderer.removeAllListeners('ag:ollama-status');
   },
 
   // ═══════════ AUTO-CHECK SERVIDORES ═══════════
@@ -104,7 +98,6 @@ contextBridge.exposeInMainWorld('antigravity', {
   // ═══════════ SETTINGS GLOBALES ═══════════
   getSettings: () => ipcRenderer.invoke('ag:get-settings'),
   setSettings: (s) => ipcRenderer.invoke('ag:set-settings', s),
-  getOllamaModels: () => ipcRenderer.invoke('ag:get-ollama-models'),
 
   // ═══════════ PROMPT REPOSITORY ═══════════
   getPrompts: () => ipcRenderer.invoke('ag:get-prompts'),
