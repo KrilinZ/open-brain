@@ -65,7 +65,6 @@ contextBridge.exposeInMainWorld('antigravity', {
   listExtensions: () => ipcRenderer.invoke('ag:list-extensions'),
 
   // ═══════════ AUTONOMIA OLLAMA ═══════════
-  },
 
   // ═══════════ AUTO-CHECK SERVIDORES ═══════════
   getServerStatuses: () => ipcRenderer.invoke('ag:get-server-statuses'),

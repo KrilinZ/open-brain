@@ -102,6 +102,8 @@ export interface KnowledgeItem {
   titulo: string;
   resumen: string;
   referencias: string[];
+  tags: string[];
+  proyecto: string;
   creadoEn: string | null;
   actualizadoEn: string | null;
   artefactos: KnowledgeArtifact[];

@@ -503,6 +503,8 @@ ipcMain.handle('ag:get-knowledge', async () => {
             referencias: meta.references || [],
             creadoEn: meta.createdAt || null,
             actualizadoEn: meta.updatedAt || null,
+            tags: meta.tags || [],
+            proyecto: meta.project || entry.name,
             artefactos: artifactFiles,
           });
         }
@@ -1475,10 +1477,12 @@ async function toolAutoCapture(sessionId) {
   let kiContent = rawContent;
   let kiResumen = `Captura automática del agente. Sesión: ${title}`;
 
-        const p = JSON.parse(match[0]);
-        if (p.resumen) kiResumen = p.resumen.substring(0, 200);
-        if (p.cuerpo) kiContent = `# ${kiTitle}\n\n> ${kiResumen}\n\n${p.cuerpo}`;
-      }
+  try {
+    const match = rawContent.match(/\{[\s\S]*?\}/);
+    if (match) {
+      const p = JSON.parse(match[0]);
+      if (p.resumen) kiResumen = p.resumen.substring(0, 200);
+      if (p.cuerpo) kiContent = `# ${kiTitle}\n\n> ${kiResumen}\n\n${p.cuerpo}`;
     }
   } catch (e) { /* fallback to raw */ }
 
@@ -1518,9 +1522,6 @@ async function toolScanGitRadars(log) {
                fs.writeFileSync(path.join(kiDir, 'artifacts', 'context.md'), kiCuerpo);
                capturados.push({ id: kiId, title: `Radar: ${projectName}` });
                log(`[ RADAR ✅ ] KI capturado: ${kiId}`);
-                     log(`[ RADAR ✅ ] KI extraído desde Git: ${kiId}`);
-                  }
-               }
           } else {
                log(`[ RADAR ] Sin cambios en ${path.basename(p)}`);
           }
