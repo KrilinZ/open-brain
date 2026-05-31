@@ -1055,6 +1055,184 @@ ipcMain.handle('ag:delete-prompt', (_e, id) => {
   return ps;
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MCP — Conexión con CLI-QUE Brain + Antigravity
+// ══════════════════════════════════════════════════════════════════════════════
+
+const MCP_CONFIG_PATH = path.join(app.getPath('home'), '.clique', 'mcp.json');
+const CLIQUE_KI_DIR   = path.join(app.getPath('home'), '.gemini', 'antigravity', 'knowledge');
+const CLIQUE_PROFILE  = path.join(app.getPath('home'), '.clique', 'ai_profile.json');
+
+function readMCPConfig() {
+  try {
+    if (fs.existsSync(MCP_CONFIG_PATH)) {
+      return JSON.parse(fs.readFileSync(MCP_CONFIG_PATH, 'utf-8'));
+    }
+  } catch (e) { debugLog(`MCP config read error: ${e.message}`); }
+  return { mcpServers: {} };
+}
+
+// List configured MCP servers with status + KI count
+ipcMain.handle('ag:mcp-list-servers', async () => {
+  const config = readMCPConfig();
+  const servers = [];
+
+  for (const [id, srv] of Object.entries(config.mcpServers || {})) {
+    const entry = {
+      id,
+      name: id === 'brain' ? 'CLI-QUE Brain' : id === '4geekswebsite' ? '4Geeks Website' : id,
+      type: srv.url ? 'http' : 'stdio',
+      status: 'unknown',
+      command: srv.command ? `${srv.command} ${(srv.args || []).join(' ')}` : undefined,
+      url: srv.url || undefined,
+      description: id === 'brain'
+        ? 'Knowledge base de CLI-QUE · ~/.gemini/antigravity/knowledge/'
+        : id === '4geekswebsite'
+        ? 'CMS MCP · YAML pages, programs, landings'
+        : 'MCP Server',
+      kiCount: undefined,
+    };
+
+    // Check status
+    if (srv.url) {
+      try {
+        const headers = srv.headers || {};
+        const resp = await fetch(srv.url, { method: 'GET', headers, signal: AbortSignal.timeout(4000) });
+        entry.status = resp.ok ? 'connected' : 'error';
+      } catch { entry.status = 'error'; }
+    } else if (srv.command) {
+      try {
+        const cmdExists = fs.existsSync(srv.command);
+        entry.status = cmdExists ? 'connected' : 'error';
+      } catch { entry.status = 'error'; }
+    }
+
+    // KI count for brain server
+    if (id === 'brain' && fs.existsSync(CLIQUE_KI_DIR)) {
+      try {
+        const dirs = fs.readdirSync(CLIQUE_KI_DIR).filter(d => {
+          const dp = path.join(CLIQUE_KI_DIR, d);
+          return fs.statSync(dp).isDirectory() && fs.existsSync(path.join(dp, 'metadata.json'));
+        });
+        entry.kiCount = dirs.length;
+        entry.status = 'connected';
+      } catch { }
+    }
+
+    servers.push(entry);
+  }
+  return servers;
+});
+
+// Search KIs from ~/.gemini/antigravity/knowledge/
+ipcMain.handle('ag:mcp-search-ki', async (_e, query = '') => {
+  const items = [];
+  if (!fs.existsSync(CLIQUE_KI_DIR)) return items;
+
+  const tokens = query.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+
+  for (const dir of fs.readdirSync(CLIQUE_KI_DIR)) {
+    const dp = path.join(CLIQUE_KI_DIR, dir);
+    if (!fs.statSync(dp).isDirectory()) continue;
+    const mp = path.join(dp, 'metadata.json');
+    if (!fs.existsSync(mp)) continue;
+    try {
+      const meta = JSON.parse(fs.readFileSync(mp, 'utf-8'));
+      const title = meta.title || dir;
+      const summary = meta.summary || '';
+
+      if (tokens.length === 0) {
+        items.push({ id: dir, title, summary, createdAt: meta.createdAt || '' });
+      } else {
+        const haystack = `${title} ${summary}`.toLowerCase();
+        if (tokens.some(t => haystack.includes(t))) {
+          items.push({ id: dir, title, summary, createdAt: meta.createdAt || '' });
+        }
+      }
+    } catch { }
+  }
+
+  // Sort: newest first (by createdAt or dir name)
+  items.sort((a, b) => (b.createdAt || b.id).localeCompare(a.createdAt || a.id));
+  return items.slice(0, 100);
+});
+
+// Read full KI content from Antigravity
+ipcMain.handle('ag:mcp-read-ki', async (_e, kiId) => {
+  const kiPath = path.join(CLIQUE_KI_DIR, kiId);
+  if (!fs.existsSync(kiPath)) return null;
+  const mp = path.join(kiPath, 'metadata.json');
+  const meta = fs.existsSync(mp) ? JSON.parse(fs.readFileSync(mp, 'utf-8')) : {};
+
+  let content = '';
+  const artDir = path.join(kiPath, 'artifacts');
+  if (fs.existsSync(artDir)) {
+    for (const f of fs.readdirSync(artDir)) {
+      const fp = path.join(artDir, f);
+      if (fs.statSync(fp).isFile()) {
+        content += fs.readFileSync(fp, 'utf-8') + '\n';
+      }
+    }
+  }
+  // Fallback: root .md files
+  if (!content) {
+    for (const f of fs.readdirSync(kiPath)) {
+      if (f.endsWith('.md')) {
+        content += fs.readFileSync(path.join(kiPath, f), 'utf-8') + '\n';
+      }
+    }
+  }
+
+  return {
+    id: kiId,
+    title: meta.title || kiId,
+    summary: meta.summary || '',
+    content: content.slice(0, 20000),
+    createdAt: meta.createdAt || '',
+  };
+});
+
+// Create KI in ~/.gemini/antigravity/knowledge/ (syncs to both brains)
+ipcMain.handle('ag:mcp-create-ki', async (_e, { title, summary, content }) => {
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const id = `${slug}-${Date.now()}`;
+  const kiPath = path.join(CLIQUE_KI_DIR, id);
+  const artPath = path.join(kiPath, 'artifacts');
+  fs.mkdirSync(artPath, { recursive: true });
+
+  const meta = { title, summary: summary || '', createdAt: new Date().toISOString(), id };
+  fs.writeFileSync(path.join(kiPath, 'metadata.json'), JSON.stringify(meta, null, 2));
+  fs.writeFileSync(path.join(artPath, 'context.md'), content);
+
+  // Also mirror to ~/.openbrain/knowledge/
+  const obPath = path.join(AG_KNOWLEDGE, id);
+  const obArtPath = path.join(obPath, 'artifacts');
+  fs.mkdirSync(obArtPath, { recursive: true });
+  fs.writeFileSync(path.join(obPath, 'metadata.json'), JSON.stringify(meta, null, 2));
+  fs.writeFileSync(path.join(obArtPath, 'context.md'), content);
+
+  debugLog(`MCP KI created: ${id}`);
+  return { id, title };
+});
+
+// Get AI profile from ~/.clique/ai_profile.json
+ipcMain.handle('ag:mcp-get-profile', async () => {
+  try {
+    if (fs.existsSync(CLIQUE_PROFILE)) {
+      const raw = JSON.parse(fs.readFileSync(CLIQUE_PROFILE, 'utf-8'));
+      return {
+        codingStyle: raw.codingStyle || {},
+        learnedPatterns: raw.learnedPatterns || [],
+        customInstructions: raw.customInstructions || '',
+        autoLearn: raw.autoLearn ?? true,
+      };
+    }
+  } catch (e) { debugLog(`Profile read error: ${e.message}`); }
+  return {};
+});
+
+// ── END MCP HANDLERS ────────────────────────────────────────────────────────
+
 ipcMain.handle('ag:get-servers', async () => {
   return readServers();
 });

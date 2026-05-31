@@ -7,7 +7,8 @@ import type { KnowledgeItem, ApiConfig, ServerConfig } from "@/types/antigravity
 import { TabConocimiento } from "./components/tabs/TabConocimiento";
 import { TabApis } from "./components/tabs/TabApis";
 import { TabServidores } from "./components/tabs/TabServidores";
-import { Brain, Key, Server, Wifi, WifiOff } from "lucide-react";
+import { TabMCP } from "./components/tabs/TabMCP";
+import { Brain, Key, Server, Plug, Wifi, WifiOff } from "lucide-react";
 
 const isElectron = typeof window !== "undefined" && !!window.antigravity;
 
@@ -47,7 +48,7 @@ async function pingOllama(): Promise<"OK" | "ERROR"> {
 // ─────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
-  const [activeTab, setActiveTab]           = useState<"brain"|"apis"|"servers">("brain");
+  const [activeTab, setActiveTab]           = useState<"brain"|"apis"|"servers"|"mcp">("brain");
   const [kiSearchQuery, setKiSearchQuery]   = useState("");
   const [selectedKi, setSelectedKi]         = useState<KnowledgeItem | null>(null);
   const [newKiTitle, setNewKiTitle]         = useState("");
@@ -144,6 +145,7 @@ export default function App() {
     { id: "brain"   as const, label: "BRAIN",      Icon: Brain,  badge: knowledgeItems.length },
     { id: "apis"    as const, label: "APIs",        Icon: Key,    badge: apis.length },
     { id: "servers" as const, label: "SERVIDORES",  Icon: Server, badge: totalServers },
+    { id: "mcp"     as const, label: "MCP",         Icon: Plug,   badge: 0 },
   ];
 
   return (
@@ -252,6 +254,7 @@ export default function App() {
         {activeTab === "brain"   && <TabConocimiento ctx={ctx} />}
         {activeTab === "apis"    && <TabApis         ctx={ctx} />}
         {activeTab === "servers" && <TabServidores   ctx={ctx} />}
+        {activeTab === "mcp"     && <TabMCP           ctx={ctx} />}
       </div>
     </div>
   );

@@ -102,5 +102,12 @@ contextBridge.exposeInMainWorld('antigravity', {
   getPrompts: () => ipcRenderer.invoke('ag:get-prompts'),
   savePrompt: (p) => ipcRenderer.invoke('ag:save-prompt', p),
   deletePrompt: (id) => ipcRenderer.invoke('ag:delete-prompt', id),
+
+  // ═══════════ MCP — CLI-QUE BRAIN + ANTIGRAVITY ═══════════
+  mcpListServers: ()           => ipcRenderer.invoke('ag:mcp-list-servers'),
+  mcpSearchKI:    (query)      => ipcRenderer.invoke('ag:mcp-search-ki', query),
+  mcpReadKI:      (kiId)       => ipcRenderer.invoke('ag:mcp-read-ki', kiId),
+  mcpCreateKI:    (data)       => ipcRenderer.invoke('ag:mcp-create-ki', data),
+  mcpGetProfile:  ()           => ipcRenderer.invoke('ag:mcp-get-profile'),
 });
 
