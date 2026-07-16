@@ -1,195 +1,184 @@
 <div align="center">
 
+<img src="src/assets/logo-brain.png" alt="Open Brain" width="120" />
+
 # 🧠 Open Brain
 
-**The Neural OS for AI-First Development**
+### Tu segundo cerebro con IA — RAG conversacional sobre tu propio conocimiento, local-first
 
-Open Brain is a local-first desktop application that acts as a centralized control plane for AI-driven development workflows. It unifies sessions from multiple AI agents (Cursor, Windsurf, Claude Code, Aider), manages knowledge items, orchestrates local LLM inference, and monitors your entire infrastructure — all from a single cyberpunk-inspired interface.
+Habla con tus **400+ Knowledge Items** como si fueran una persona. Búsqueda **semántica local**, chat con streaming vía **OpenRouter**, e ingesta de **webs y documentos** — todo desde una app de escritorio con estética Neural OS, sin que tus datos vivan en la nube de nadie.
 
-**100% OFF-GRID & SECURE**: Your data never leaves your machine. The Vault algorithm stores all data entirely on your local disk, API credentials are mathematically encrypted, and AI inference is processed completely offline via Ollama. Zero telemetry, zero cloud tracking, unhackable local execution.
+<br/>
 
-[![Version](https://img.shields.io/badge/v1.3.0-stable-00e5ff?style=for-the-badge&logo=electron&logoColor=white)](https://github.com/KrilinZ/open-brain/releases)
-[![macOS](https://img.shields.io/badge/macOS-ARM64-000000?style=for-the-badge&logo=apple&logoColor=white)](#installation)
+[![Version](https://img.shields.io/badge/v2-Brain_Conversacional-ff2d78?style=for-the-badge&logo=electron&logoColor=white)](#)
+[![macOS](https://img.shields.io/badge/macOS-Apple_Silicon-000000?style=for-the-badge&logo=apple&logoColor=white)](#-instalación)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Ollama](https://img.shields.io/badge/Ollama-Llama_3.2-white?style=for-the-badge&logo=meta&logoColor=black)](https://ollama.com/)
-[![License](https://img.shields.io/badge/MIT-green?style=for-the-badge)](#license)
+[![OpenRouter](https://img.shields.io/badge/LLM-OpenRouter-a020f0?style=for-the-badge)](https://openrouter.ai/)
+[![Local RAG](https://img.shields.io/badge/Embeddings-100%25_Local-22c55e?style=for-the-badge)](#-cómo-funciona-el-rag)
+[![License](https://img.shields.io/badge/MIT-informational?style=for-the-badge)](#-licencia)
 
 </div>
 
 ---
 
-## Why Open Brain?
+## ✨ Qué es
 
-Modern development involves multiple AI assistants operating in complete isolation. Cursor doesn't know what Windsurf did. Claude Code has no memory of your last Aider session. Architectural decisions get lost. Context fragments across tools.
+**Open Brain** es una aplicación de escritorio (Electron + React) que convierte tu conocimiento acumulado en un **asistente conversacional fundamentado**. Guarda tus notas técnicas, auditorías, decisiones y aprendizajes como *Knowledge Items* (KIs) y luego **chateas con ellos**: la IA recupera los fragmentos relevantes, responde citando las fuentes, y aprende de lo que le vas subiendo.
 
-**Open Brain solves this** by creating a unified vault (`~/.openbrain/`) where every AI session, every decision, and every knowledge artifact is automatically indexed, searchable, and available to a local AI that understands your entire project history.
+El principio rector es la **privacidad**: la recuperación (búsqueda + embeddings) ocurre **entera en tu máquina**; solo el prompt final va al modelo de OpenRouter que tú elijas — y aun así, con los secretos redactados antes de salir.
 
----
+## 🚀 Capacidades
 
-## Core Modules
+| Pestaña | Qué hace |
+|---|---|
+| 🧠 **Brain** | Explora, crea y gestiona tus Knowledge Items (KIs). |
+| 💬 **Chat** | Chat con **streaming** fundamentado en tu Brain (RAG). Cita fuentes `[[ki-id]]` clicables, selector de modelo, saldo en vivo, y botón *Guardar en Brain*. |
+| 📥 **Ingesta** | Pega una **URL** → extrae, resume con IA y guarda como KI. Arrastra **PDF / DOCX / TXT / MD** → se convierten en KIs indexados. |
+| 🔌 **MCP** | Servidor MCP que expone tus KIs a Claude, Antigravity u otros agentes. |
+| 🖥️ **Servidores** | Estado en vivo de tus VPS y servicios. |
+| 🔑 **APIs** | Panel de APIs con saldos y alertas — **keys cifradas**, nunca en claro. |
+| ⚙️ **Ajustes** | Configura OpenRouter (key cifrada en Keychain), modelo, privacidad, y reindexado semántico. |
 
-| Module | What It Does |
-| :--- | :--- |
-| **🤖 Neural Terminal** | Chat with Llama 3.2 locally — your AI understands your full runtime context (sessions, APIs, and servers) without ever exposing a single byte to the internet. It can navigate the app, scan for zombies, and run autonomous agents securely. |
-| **📡 Knowledge Base** | Automatic indexing of architectural decisions into structured Knowledge Items. Search, create, delete, and encode sessions into persistent memory. |
-| **⚡ Prompt Vault** | Repository of reusable prompts with tagging, search, and one-click injection into the Neural Terminal. |
-| **🔗 IDE Sync (UNION)** | Generates `.cursorrules`, `.windsurfrules`, and `CLAUDE.md` directives so every AI assistant syncs context back to Open Brain. |
-| **🖥️ Server Monitor** | SSH-based real-time monitoring of remote servers: RAM, Disk, Docker containers, PM2/Caddy/Nginx, with visual gauges. |
-| **🔑 API Manager** | Centralized secure vault to effortlessly store **any** API key and instantly retrieve it anytime for whatever project you need. Features real-time balance tracking for supported endpoints. |
-| **🛠️ Maintenance** | 8 system procedures: backup, clean resolved files, verify integrity, sync context, browser cache, nuclear cache, clean modules, kill zombie processes. |
-| **🎯 Auto Mode** | One-click autonomous operation — syncs all projects and knowledge items on a 5-minute interval. |
+## 🏗️ Arquitectura
 
----
+```mermaid
+flowchart TD
+    subgraph Renderer["🖥️ Renderer (React 19)"]
+        UI["Tabs: Brain · Chat · Ingesta · Ajustes …"]
+    end
+    subgraph Preload["🔒 preload.cjs (contextBridge)"]
+        Bridge["window.antigravity.* (IPC seguro)"]
+    end
+    subgraph Main["⚙️ Proceso Main (Electron)"]
+        RAG["RAG orchestrator<br/>léxico + vectorial (RRF)"]
+        OR["Cliente OpenRouter<br/>(streaming SSE)"]
+        SEC["secure-store<br/>(safeStorage / Keychain)"]
+        ING["Ingesta<br/>(fetch SSRF-safe + parse)"]
+        KI["ki-store (CRUD)"]
+    end
+    subgraph Vault["📁 ~/.openbrain (tu disco)"]
+        K["knowledge/ (KIs)"]
+        V["vector-index.json"]
+        S["secrets.enc (cifrado)"]
+        C["config.json"]
+    end
 
-## Architecture
-
+    UI <--> Bridge <--> Main
+    RAG --> KI --> K
+    RAG --> V
+    OR -->|prompt fundamentado + redactado| Cloud["☁️ OpenRouter (modelo que elijas)"]
+    SEC --> S
+    ING --> KI
+    KI --> K
 ```
-┌───────────────────────────────────────────────────────────────┐
-│                     OPEN BRAIN v1.3.0                         │
-├───────────┬────────────┬─────────────┬───────────────────────┤
-│  Neural   │  Prompts   │  Knowledge  │   Servers / APIs      │
-│  Terminal │  Vault     │  Base       │   Monitor              │
-├───────────┴────────────┴─────────────┴───────────────────────┤
-│                    Electron IPC Layer                          │
-│               (30+ handlers, preload bridge)                  │
-├───────────┬──────────────────────────┬───────────────────────┤
-│  Ollama   │    Local Filesystem      │    SSH / HTTP          │
-│ :11434    │    ~/.openbrain/         │   (Remote Server)      │
-│  Llama    │    brain/ knowledge/     │    RAM, Docker, PM2    │
-│  3.2 1B   │    prompts.json          │    Caddy, Nginx        │
-└───────────┴──────────────────────────┴───────────────────────┘
+
+## 🔍 Cómo funciona el RAG
+
+El chat no "alucina" sobre tu conocimiento: lo **recupera de verdad**.
+
+```mermaid
+flowchart LR
+    Q["Tu pregunta"] --> LEX["Búsqueda léxica<br/>(accent-folding)"]
+    Q --> EMB["Embedding local<br/>(multilingual-e5)"]
+    EMB --> VEC["Vector store<br/>(cosine)"]
+    LEX --> RRF["Fusión RRF"]
+    VEC --> RRF
+    RRF --> CTX["Contexto (presupuesto de tokens)"]
+    CTX --> RED["Redacción de secretos +<br/>anti prompt-injection"]
+    RED --> LLM["OpenRouter → respuesta con citas [[ki-id]]"]
 ```
 
----
+- **Híbrido**: combina coincidencia léxica (con plegado de acentos, para que *"auditoria"* encuentre *"Auditoría"*) y **similitud semántica** (encuentra *"proteger el servidor"* aunque el KI diga *"hardening"*).
+- **Embeddings 100% locales** con `@xenova/transformers` (WASM, modelo multilingüe) — sin módulos nativos, sin `sqlite-vec`: un simple índice JSON + cosine, instantáneo a esta escala.
+- **Citas verificadas**: solo se aceptan `[[id]]` que correspondan a KIs realmente enviados al modelo.
 
-## Installation
+## 🛡️ Privacidad y seguridad
 
-### macOS (Apple Silicon)
+Diseñado con honestidad, no con humo:
 
-1. Download **`Open Brain-1.3.0-arm64.dmg`** from [Releases](https://github.com/KrilinZ/open-brain/releases)
-2. Drag **Open Brain** into Applications
-3. First launch requires clearing the quarantine flag:
-   ```bash
-   xattr -cr "/Applications/Open Brain.app"
-   ```
-4. On first launch, the app guides you through Ollama setup if not installed
-5. All data is stored locally in `~/.openbrain/`
+- 🔐 **Keys cifradas en el Keychain de macOS** (`safeStorage`). El renderer **nunca** ve una API key; `ag:get-apis` devuelve solo máscara + `hasKey`.
+- 🧠 **Recuperación local**: la búsqueda y los embeddings no salen de tu Mac. Solo el prompt final fundamentado se envía al modelo que elijas.
+- ✂️ **Redacción de secretos** salientes: keys, tokens, JWT y emails se enmascaran antes de ir a la nube (configurable).
+- 🧱 **Anti prompt-injection**: el contexto de tus KIs se envuelve en `<contexto_brain>` con instrucción de tratarlo como datos, nunca como órdenes.
+- 🌐 **Ingesta con guarda anti-SSRF**: bloquea IPs privadas, loopback, link-local y endpoints de metadata cloud; valida cada redirect.
+- 📦 **DMG vacío garantizado**: un guard de build aborta el empaquetado si detecta KIs, keys o datos personales. Tu vault vive siempre en `~/.openbrain`, jamás dentro del `.app`.
+- 🪝 **Pre-commit secret-scan**: un hook de git bloquea commits que contengan secretos.
 
-### From Source
+> **Nota honesta:** el chat usa un LLM en la nube (OpenRouter), así que el *prompt fundamentado* sí sale de tu máquina (minimizado y redactado). Para cero-nube, activa el modo *solo-local* en Ajustes (recuperación sin generación).
+
+## 📦 Instalación
+
+Requisitos: **Node 20+**, macOS Apple Silicon (para el `.dmg`; el core corre en cualquier plataforma Electron).
 
 ```bash
 git clone https://github.com/KrilinZ/open-brain.git
 cd open-brain
 npm install
 
-# Development (hot reload)
+# Desarrollo (Vite + Electron con hot-reload)
 npm run app:dev
 
-# Production build (generates DMG in release/)
+# Empaquetar la app de escritorio (.app + .dmg, Apple Silicon)
 npm run app:build
 ```
 
----
+Al primer arranque, un onboarding te pide tu **API key de OpenRouter** (se guarda cifrada). Consíguela en [openrouter.ai/keys](https://openrouter.ai/keys).
 
-## Tech Stack
+## ⚙️ Configuración
 
-| Layer | Technology |
-| :--- | :--- |
-| **Runtime** | Electron v33 (ESM native) |
-| **UI** | React 19 + TypeScript + Tailwind CSS v4 |
-| **Animations** | Framer Motion 12 |
-| **Components** | Radix UI (Tabs, ScrollArea, Select, Progress) |
-| **Icons** | Lucide React |
-| **AI Backend** | Ollama → Llama 3.2 1B (local, no cloud) |
-| **Build** | Vite 8 + electron-builder → DMG arm64 |
+Todo se gestiona desde la pestaña **Ajustes** (nada de editar JSON a mano):
 
----
+- **OpenRouter**: key (cifrada), modelo por defecto (`openai/gpt-4o-mini` recomendado para no drenar saldo), y prueba de conexión con saldo en vivo.
+- **Privacidad**: toggles de *solo-local*, *enviar contexto de KIs*, *redactar secretos*.
+- **Búsqueda semántica**: botón **Reindexar** con barra de progreso (construye/actualiza el índice de embeddings local).
 
-## Vault Structure
+## 🗂️ Estructura del proyecto
 
 ```
-~/.openbrain/
-├── brain/                    # AI session artifacts
-│   └── <session-id>/
-│       ├── walkthrough.md
-│       ├── implementation_plan.md
-│       └── task.md
-├── knowledge/                # Knowledge Items
-│   └── <ki-id>/
-│       ├── metadata.json
-│       └── artifacts/context.md
-├── conversations/            # Binary session data (.pb)
-├── chat-logs/                # Neural Terminal history
-├── servers.json              # Server configurations
-├── apis.json                 # API credentials & balances
-├── prompts.json              # Prompt repository
-├── projects.json             # Git radar tracked projects
-├── settings.json             # Global settings
-└── openbrain-debug.log       # Debug output
+main.js                 # Proceso main de Electron (IPC handlers)
+preload.cjs             # Puente seguro renderer ↔ main
+main/                   # secure-store (Keychain) · config-store
+lib/
+  ├─ openrouter-chat.mjs   # Cliente OpenRouter (streaming SSE, 0 deps)
+  ├─ ki-store.mjs          # CRUD canónico de KIs
+  ├─ rag/                  # normalize · chunk · retriever · embedder ·
+  │                        # vector-store · orchestrator · vector-index
+  └─ ingest/               # fetcher (anti-SSRF) · extract · doc-parse
+scripts/                # mcp-ki-server · ki-reconcile · verify-clean-build · secret-scan
+src/                    # React 19 + Tailwind + framer-motion
+  └─ components/tabs/    # TabBrainChat · TabIngesta · TabConfig · …
+~/.openbrain/           # 📁 Tu vault (KIs, índice, config, secrets.enc) — fuera del repo
 ```
 
----
-
-## CLI Tools
+## 🔌 Herramientas CLI
 
 ```bash
-# Knowledge Item CLI
-npm run ki              # List, get, create KIs from terminal
-
-# MCP Server (for Claude Desktop / VS Code integration)
-npm run ki:mcp          # Exposes KIs via Model Context Protocol
+npm run ki:mcp            # Servidor MCP (expone tus KIs a Claude/Antigravity)
+npm run ki:reconcile      # Reconcilia/unifica stores de KIs (dry-run)
+npm run verify:clean      # Comprueba que ningún dato sensible se colaría en el DMG
 ```
 
----
+## 🧰 Stack
 
-## Changelog
+**Electron 41** · **React 19** · **Vite** · **TailwindCSS** · **framer-motion** · **OpenRouter** (LLM) · **@xenova/transformers** (embeddings locales, WASM) · **Readability + Turndown + pdf-parse + mammoth** (ingesta) · **MCP** (JSON-RPC).
 
-### v1.3.0 — Native KI Auto-Extractor & System Optimization
-- Integrated KI background extraction Daemon directly inside the app's Node process.
-- Hooked the KI extractor logic to the global `AUTO: ON` HUD widget with persisting config state.
-- Extracted Knowledge rules into an enforced Antigravity `ki-management` workflow.
-- Cleaned up obsolete imports failing the strict TS compilation build.
-- Purged messy debug logic from React component lifecycles.
-- Fixed severe React rendering crash in `TabConocimiento` caused by missing metadata string mapping.
+## 🗺️ Estado
 
-### v1.2.3 — Production Render Stability Fix
-- Fixed critical `TabPrompts` crash by enforcing strict Optional Chaining on JSON data filtering
-- Resolved fatal `layoutId` projection crash in Framer Motion affecting Vite production builds
+Todas las fases del roadmap están hechas y verificadas:
 
-### v1.2.2 — Stability & Bug Fixes
-- Fixed critical `isQuitting` flag preventing app reopen from Dock after Cmd+Q
-- Fixed `scrollIntoView` in Neural Terminal hijacking page scroll position
-- Fixed `setIsSaving(true)` bug in Prompt Vault that permanently blocked the UI
-- Fixed `refreshAll` declared after `runAutoSync` causing ReferenceError on mount
-- Added null guards for `syncApis`, `api.saldo`, and maintenance action returns
-- Fixed `o.path` → `o.ruta` in Vault file locator
-- Replaced impure `Math.random()` in render with deterministic index hash
-- Added Auto Mode: one-click autonomous knowledge sync on 5-minute interval
-- Added cyberpunk HUD decorations, logo pulse animation, and CRT scanline
-- Intensified neon glow aesthetics (4-layer box-shadow system)
+- ✅ Rescate y unificación de KIs (single source of truth)
+- ✅ Cimiento: seguridad + config + DMG vacío
+- ✅ Motor de chat OpenRouter (streaming)
+- ✅ Brain Chat (MVP conversacional)
+- ✅ RAG con citas y *Guardar en Brain*
+- ✅ Búsqueda semántica local (embeddings)
+- ✅ Ingesta web + documentos
 
-### v1.1.0 — Knowledge & Maintenance
-- Centralized Knowledge Base with automatic session indexing
-- Server monitoring with SSH health checks and alerts
-- API credential management with balance tracking
-- Advanced process management and cache cleanup tools
+## 📄 Licencia
 
-### v1.0.0 — Initial Release
-- Core session management and artifact viewer
-- Prompt vault with tagging system
-- Local Ollama integration for offline AI inference
-- IDE directive generation (`.cursorrules`, `.windsurfrules`)
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE) for details.
+MIT © Nacho López ([KrilinZ](https://github.com/KrilinZ))
 
 <div align="center">
-
-Developed by [KrilinZ](https://github.com/KrilinZ)
-
-*Your brain, your data, your machine.*
-
+<br/>
+<sub>Construido con obsesión por la privacidad y el conocimiento que no se pierde. 🧠</sub>
 </div>

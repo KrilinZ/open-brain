@@ -7,3 +7,17 @@ release/
 builder-debug.yml
 builder-effective-config.yaml
 mac-arm64/
+
+# Seguridad — nunca commitear auditorías con secretos, logs ni almacenes de keys
+AUDIT_*.md
+*.log
+secrets.enc
+*.tmp
+.env
+.env.*
+
+# Artefactos de build y basura de trabajo
+release_dir/
+.playwright-mcp/
+diff_app.txt
+tmp_fix.cjs

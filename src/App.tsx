@@ -8,7 +8,11 @@ import { TabConocimiento } from "./components/tabs/TabConocimiento";
 import { TabApis } from "./components/tabs/TabApis";
 import { TabServidores } from "./components/tabs/TabServidores";
 import { TabMCP } from "./components/tabs/TabMCP";
-import { Brain, Key, Server, Plug, Wifi, WifiOff } from "lucide-react";
+import { TabConfig } from "./components/tabs/TabConfig";
+import { TabBrainChat } from "./components/tabs/TabBrainChat";
+import { TabIngesta } from "./components/tabs/TabIngesta";
+import Onboarding from "./components/Onboarding";
+import { Brain, Key, Server, Plug, Wifi, WifiOff, Settings, MessageSquare, FileUp } from "lucide-react";
 
 const isElectron = typeof window !== "undefined" && !!window.antigravity;
 
@@ -48,7 +52,8 @@ async function pingOllama(): Promise<"OK" | "ERROR"> {
 // ─────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
-  const [activeTab, setActiveTab]           = useState<"brain"|"apis"|"servers"|"mcp">("brain");
+  const [activeTab, setActiveTab]           = useState<"brain"|"chat"|"ingesta"|"apis"|"servers"|"mcp"|"config">("brain");
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [kiSearchQuery, setKiSearchQuery]   = useState("");
   const [selectedKi, setSelectedKi]         = useState<KnowledgeItem | null>(null);
   const [newKiTitle, setNewKiTitle]         = useState("");
@@ -122,6 +127,14 @@ export default function App() {
     return () => clearInterval(iv);
   }, []);
 
+  // ── Primer arranque: mostrar onboarding si no está completado (DMG vacío) ──
+  useEffect(() => {
+    if (!isElectron || !window.antigravity.getConfig) return;
+    window.antigravity.getConfig()
+      .then((c) => { if (c && c.onboarding && c.onboarding.completed !== true) setShowOnboarding(true); })
+      .catch(() => {});
+  }, []);
+
   const ctx = {
     knowledgeItems,
     kiSearchQuery, setKiSearchQuery,
@@ -143,9 +156,12 @@ export default function App() {
 
   const TABS = [
     { id: "brain"   as const, label: "BRAIN",      Icon: Brain,  badge: knowledgeItems.length },
+    { id: "chat"    as const, label: "CHAT",        Icon: MessageSquare, badge: 0 },
+    { id: "ingesta" as const, label: "INGESTA",     Icon: FileUp, badge: 0 },
     { id: "apis"    as const, label: "APIs",        Icon: Key,    badge: apis.length },
     { id: "servers" as const, label: "SERVIDORES",  Icon: Server, badge: totalServers },
     { id: "mcp"     as const, label: "MCP",         Icon: Plug,   badge: 0 },
+    { id: "config"  as const, label: "AJUSTES",     Icon: Settings, badge: 0 },
   ];
 
   return (
@@ -252,10 +268,16 @@ export default function App() {
       {/* ── CONTENT ── */}
       <div className="flex-1 overflow-hidden overflow-y-auto p-5">
         {activeTab === "brain"   && <TabConocimiento ctx={ctx} />}
+        {activeTab === "chat"    && <TabBrainChat     ctx={ctx} />}
+        {activeTab === "ingesta" && <TabIngesta       ctx={ctx} />}
         {activeTab === "apis"    && <TabApis         ctx={ctx} />}
         {activeTab === "servers" && <TabServidores   ctx={ctx} />}
         {activeTab === "mcp"     && <TabMCP           ctx={ctx} />}
+        {activeTab === "config"  && <TabConfig        ctx={ctx} />}
       </div>
+
+      {/* ── Onboarding (primer arranque) ── */}
+      {showOnboarding && <Onboarding onDone={() => setShowOnboarding(false)} />}
     </div>
   );
 }

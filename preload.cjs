@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('antigravity', {
   // Sesiones / Conversaciones
@@ -55,6 +55,41 @@ contextBridge.exposeInMainWorld('antigravity', {
   saveApi: (api) => ipcRenderer.invoke('ag:save-api', api),
   deleteApi: (apiId) => ipcRenderer.invoke('ag:delete-api', apiId),
   syncApis: () => ipcRenderer.invoke('ag:sync-apis'),
+
+  // ═══════════ CONFIG / AJUSTES + KEYS CIFRADAS ═══════════
+  getConfig: () => ipcRenderer.invoke('ag:get-config'),
+  saveConfig: (partial) => ipcRenderer.invoke('ag:save-config', partial),
+  revealConfigKey: () => ipcRenderer.invoke('ag:reveal-config-key'),
+  testOpenRouterKey: (key) => ipcRenderer.invoke('ag:test-openrouter-key', key),
+  getOpenRouterModels: () => ipcRenderer.invoke('ag:get-openrouter-models'),
+  setApiKey: (id, key) => ipcRenderer.invoke('ag:set-api-key', { id, key }),
+  hasApiKey: (id) => ipcRenderer.invoke('ag:has-api-key', id),
+
+  // ═══════════ CHAT LLM (OpenRouter streaming) ═══════════
+  chatStreamStart: (payload) => ipcRenderer.send('ag:chat-stream-start', payload),
+  chatStreamCancel: (requestId) => ipcRenderer.send('ag:chat-stream-cancel', requestId),
+  chatCheckCredits: () => ipcRenderer.invoke('ag:chat-check-credits'),
+  onChatToken: (cb) => { const h = (_e, d) => cb(d); ipcRenderer.on('ag:chat-stream-token', h); return () => ipcRenderer.removeListener('ag:chat-stream-token', h); },
+  onChatDone: (cb) => { const h = (_e, d) => cb(d); ipcRenderer.on('ag:chat-stream-done', h); return () => ipcRenderer.removeListener('ag:chat-stream-done', h); },
+  onChatError: (cb) => { const h = (_e, d) => cb(d); ipcRenderer.on('ag:chat-stream-error', h); return () => ipcRenderer.removeListener('ag:chat-stream-error', h); },
+
+  // ═══════════ RAG (grounding + guardar en Brain) ═══════════
+  ragPrepare: (query) => ipcRenderer.invoke('ag:rag-prepare', { query }),
+  ragSaveKI: (payload) => ipcRenderer.invoke('ag:rag-save-ki', payload),
+  ragIndexStatus: () => ipcRenderer.invoke('ag:rag-index-status'),
+  ragReindex: (opts) => ipcRenderer.invoke('ag:rag-reindex', opts),
+  ragIndexKI: (kiId) => ipcRenderer.invoke('ag:rag-index-ki', kiId),
+  onRagIndexProgress: (cb) => { const h = (_e, d) => cb(d); ipcRenderer.on('ag:rag-index-progress', h); return () => ipcRenderer.removeListener('ag:rag-index-progress', h); },
+
+  // ═══════════ INGESTA (web + documentos) ═══════════
+  ingestFetch: (url) => ipcRenderer.invoke('ag:ingest-fetch', { url }),
+  ingestSummarize: (payload) => ipcRenderer.invoke('ag:ingest-summarize', payload),
+  ingestSave: (payload) => ipcRenderer.invoke('ag:ingest-save', payload),
+  pickDocuments: () => ipcRenderer.invoke('ag:pick-documents'),
+  ingestDocuments: (paths) => ipcRenderer.invoke('ag:ingest-documents', { paths }),
+  onIngestProgress: (cb) => { const h = (_e, d) => cb(d); ipcRenderer.on('ag:ingest-progress', h); return () => ipcRenderer.removeListener('ag:ingest-progress', h); },
+  // Electron 41 quitó File.path → webUtils.getPathForFile para drag&drop
+  resolveFilePath: (file) => { try { return webUtils.getPathForFile(file); } catch { return (file && file.path) || ''; } },
 
   // ═══════════ MANTENIMIENTO PROFUNDO ═══════════
   getMaintenanceInfo: () => ipcRenderer.invoke('ag:get-maintenance-info'),

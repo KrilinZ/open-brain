@@ -1,0 +1,3 @@
+#!/bin/sh
+# Pre-commit: bloquea commits con secretos. Ver scripts/secret-scan.mjs
+node scripts/secret-scan.mjs || exit 1

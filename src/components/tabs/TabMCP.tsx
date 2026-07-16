@@ -89,25 +89,41 @@ export function TabMCP({ ctx }: { ctx: any }) {
   const [saving, setSaving]           = useState(false);
   const [toast, setToast]             = useState<string | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
-  };
+  }, []);
 
   // ── Load servers ────────────────────────────────────────────────────────
   const loadServers = useCallback(async () => {
     setLoading(true);
-    try {
-      const data: MCPServer[] = isElectron
-        ? await window.antigravity.mcpListServers()
-        : MOCK_SERVERS;
-      setServers(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+    let retries = 0;
+    const MAX_RETRIES = 2;
+    
+    while (retries <= MAX_RETRIES) {
+      try {
+        const data: MCPServer[] = isElectron
+          ? await Promise.race([
+              window.antigravity.mcpListServers(),
+              new Promise<MCPServer[]>((_, rej) => setTimeout(() => rej(new Error("Timeout")), 5000))
+            ])
+          : MOCK_SERVERS;
+        setServers(data);
+        setLoading(false);
+        return;
+      } catch (e) {
+        retries++;
+        if (retries <= MAX_RETRIES) {
+          console.warn(`Retry ${retries}/${MAX_RETRIES}...`);
+          await new Promise(r => setTimeout(r, 1000 * retries));
+        }
+      }
     }
-  }, []);
+    console.error("Failed to load servers after retries");
+    setServers([]);
+    setLoading(false);
+    showToast("✗ No se pudo conectar con MCP servers");
+  }, [showToast]);
 
   // ── Load KIs ────────────────────────────────────────────────────────────
   const loadKIs = useCallback(async (q = "") => {
@@ -142,11 +158,22 @@ export function TabMCP({ ctx }: { ctx: any }) {
       const detail = isElectron
         ? await window.antigravity.mcpReadKI(ki.id)
         : { ...ki, content: "Mock content for " + ki.title };
-      setSelectedKi(detail);
+      
+      // VALIDAR que respuesta es válida
+      if (!detail || typeof detail !== 'object') {
+        showToast("✗ Error cargando detalles del KI");
+        return;
+      }
+      
+      setSelectedKi({
+        ...detail,
+        content: detail.content || "(sin contenido)"
+      });
     } catch (e) {
       console.error(e);
+      showToast("✗ Error abriendo KI: " + ((e as Error)?.message || "unknown"));
     }
-  }, []);
+  }, [showToast]);
 
   // ── Create KI ─────────────────────────────────────────────────────────────
   const createKI = useCallback(async () => {
@@ -161,14 +188,34 @@ export function TabMCP({ ctx }: { ctx: any }) {
       showToast("✓ KI creado en Antigravity Brain");
       loadKIs(search);
     } catch (e) {
-      showToast("✗ Error creando KI");
+      const msg = e instanceof Error ? e.message : "Error desconocido";
+      showToast(`✗ Error creando KI: ${msg.slice(0, 50)}`);
     } finally {
       setSaving(false);
     }
-  }, [newKiTitle, newKiSummary, newKiContent, search, loadKIs]);
+  }, [newKiTitle, newKiSummary, newKiContent, search, loadKIs, showToast]);
 
   // ── Effects ────────────────────────────────────────────────────────────────
-  useEffect(() => { loadServers(); loadKIs(""); loadProfile(); }, []);
+  useEffect(() => { 
+    loadServers(); 
+    loadKIs(""); 
+    loadProfile(); 
+  }, [loadServers, loadKIs, loadProfile]);
+  
+  // ── Sync server statuses from Electron heartbeat ──
+  useEffect(() => {
+    if (!isElectron || !window.antigravity?.onServerStatuses) return;
+    
+    const unsub = window.antigravity.onServerStatuses((statuses: Record<string, any>) => {
+      setServers((prev) =>
+        prev.map((srv) => ({
+          ...srv,
+          status: statuses[srv.id]?.status || "unknown",
+        }))
+      );
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => loadKIs(search), 300);
@@ -343,8 +390,14 @@ export function TabMCP({ ctx }: { ctx: any }) {
       )}
 
       {/* ── SECTION: AI PROFILE ──────────────────────────────────────────── */}
-      {activeSection === "profile" && profile && (
+      {activeSection === "profile" && (
         <div className="flex flex-col gap-3 overflow-y-auto" style={{ maxHeight: "500px" }}>
+          {profile === null ? (
+            <div className="text-center py-10 text-slate-600 text-xs">Cargando perfil…</div>
+          ) : profile === undefined ? (
+            <div className="text-center py-10 text-red-500 text-xs">✗ Error cargando AI Profile</div>
+          ) : (
+            <>
           {/* Coding Style */}
           {profile.codingStyle && (
             <div className="rounded-xl p-4 border"
@@ -404,6 +457,8 @@ export function TabMCP({ ctx }: { ctx: any }) {
                 {profile.customInstructions.slice(0, 400)}{profile.customInstructions.length > 400 ? "…" : ""}
               </p>
             </div>
+          )}
+            </>
           )}
         </div>
       )}
@@ -530,6 +585,21 @@ const MOCK_SERVERS: MCPServer[] = [
     status: "connected",
     url: "https://4geeksacademy.com/mcp",
     description: "CMS MCP · YAML pages, programs, landings",
+  },
+  {
+    id: "4geeks-broken",
+    name: "4Geeks Website (OFFLINE TEST)",
+    type: "http",
+    status: "error",
+    url: "https://4geeksacademy.com/mcp",
+    description: "CMS MCP (Para testing de error state)",
+  },
+  {
+    id: "unknown-srv",
+    name: "Unknown Server",
+    type: "stdio",
+    status: "unknown",
+    description: "Status desconocido (Para testing)",
   },
 ];
 
